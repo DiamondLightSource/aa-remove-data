@@ -149,7 +149,7 @@ class PBUtils:
         sample_class = self.get_proto_class()
         self.samples = [sample_class() for _ in range(samples)]
         time_gap = seconds_gap * 10**9 + nano_gap
-        time = 0
+        time = start * 10**9
         for i, sample in enumerate(self.samples):
             sample.secondsintoyear = time // 10**9
             sample.nano = time % 10**9
