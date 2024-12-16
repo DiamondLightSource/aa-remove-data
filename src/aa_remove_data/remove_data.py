@@ -1,8 +1,9 @@
+import argparse
 from typing import Any, Callable
 import time
+from pathlib import Path
 
 from aa_remove_data.pb_utils import PBUtils
-from pathlib import Path
 
 
 def get_nano_diff(sample1: type, sample2: type) -> int:
@@ -85,10 +86,68 @@ def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
     reduced_samples = [samples[-1]]
     for i in range(len(samples) - 2, -1, -1):
         diff += get_diff(samples[i], samples[i + 1])
-        if diff > delta:
+        if diff >= delta:
             reduced_samples.append(samples[i])
             diff = 0
     return list(reversed(reduced_samples))
+
+
+def get_index_at_timestamp(samples: list, seconds: int, nano: int = 0) -> tuple[int, float]:
+    """Get index of the sample closest to a timestamp.
+
+    Args:
+        samples (list): List of samples.
+        seconds (int): Seconds portion of timestamp (into the year).
+        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
+
+    Returns:
+        tuple[int, float]: Index of closest sample, difference in seconds
+        between the target timestamp and sample.
+    """
+    target = seconds + nano * 10**-9
+    last_diff = target + 1
+    for i, sample in enumerate(samples):
+        diff = target - (sample.secondsintoyear + sample.nano * 10**-9)
+        if abs(last_diff) <= abs(diff):
+            return i - 1, last_diff
+        last_diff = diff
+    return -1, last_diff
+
+
+def remove_before_ts(samples: list, seconds: int, nano: int = 0) -> list:
+    """Remove all samples before a certain timestamp.
+
+    Args:
+        samples (list): List of samples.
+        seconds (int): Seconds portion of timestamp.
+        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
+
+    Returns:
+        list: Reduced list of samples.
+    """
+    index, diff = get_index_at_timestamp(samples, seconds, nano)
+    if diff > 0:
+        return samples[index + 1:]
+    else:
+        return samples[index:]
+
+
+def remove_after_ts(samples: list, seconds: int, nano: int = 0) -> list:
+    """Remove all samples after a certain timestamp.
+
+    Args:
+        samples (list): List of samples.
+        seconds (int): Seconds portion of timestamp.
+        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
+
+    Returns:
+        list: Reduced list of samples.
+    """
+    index, diff = get_index_at_timestamp(samples, seconds, nano)
+    if diff > 0:
+        return samples[:index + 1]
+    else:
+        return samples[:index]
 
 
 def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
@@ -129,4 +188,3 @@ def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     else:
         return [item for i, item in enumerate(samples) if
                 (i + block_size) // block_size % n != 0]
-
