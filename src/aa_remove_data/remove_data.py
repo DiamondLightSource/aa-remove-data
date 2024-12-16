@@ -1,0 +1,132 @@
+from typing import Any, Callable
+import time
+
+from aa_remove_data.pb_utils import PBUtils
+from pathlib import Path
+
+
+def get_nano_diff(sample1: type, sample2: type) -> int:
+    """Get the difference in nano seconds between two samples.
+
+    Args:
+        sample1 (type): An Archiver Appliance sample.
+        sample2 (type): Another Archiver Appliance sample.
+
+    Returns:
+        int: Difference in nanoseconds.
+    """
+    diff = (sample2.secondsintoyear - sample1.secondsintoyear) * 10**9 + (
+        sample2.nano - sample1.nano
+    )
+    assert diff > 0
+    return diff
+
+
+def get_seconds_diff(sample1: type, sample2: type) -> int:
+    """Get the difference in whole seconds between two samples.
+
+    Args:
+        sample1 (type): An Archiver Appliance sample.
+        sample2 (type): Another Archiver Appliance sample.
+
+    Returns:
+        _type_: Difference in seconds
+    """
+    diff = sample2.secondsintoyear - sample1.secondsintoyear
+    assert diff >= 0
+    return diff
+
+
+def benchmark(function: Callable, *args: Any, **kwargs: Any) -> Any:
+    """Print the time taken for a function to execute.
+
+    Args:
+        function (Callable): Function to execute.
+
+    Returns:
+        Any: Result of the function.
+    """
+    start_time = time.time()
+    result = function(*args, **kwargs)
+    end_time = time.time()
+    print(f"Time taken for {function.__name__}: {end_time - start_time:.2f}s.")
+    return result
+
+
+def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
+    """Reduce the frequency of a list of samples. Specify the desired frequency
+    or period (not both).
+
+    Args:
+        samples (list): _description_
+        freq (float, optional): Desired frequency. Defaults to 0.
+        period (float, optional): Desired period. Defaults to 0.
+
+    Returns:
+        list: Reduced list of samples
+    """
+    assert (
+        freq * period == 0 and (freq + period) > 0
+    ), "Must set either frequency or period, not both or none."
+    if freq:
+        seconds_delta = 1 / freq
+    else:
+        seconds_delta = period
+    nano_delta = (seconds_delta * 10**9) // 1
+    i = len(samples) - 1
+    diff = 0
+    assert nano_delta >= 1, "Must have a period of more than 1 nanosecond."
+    if seconds_delta >= 5:      # Save time for long periods by ignoring nano
+        delta = seconds_delta
+        get_diff = get_seconds_diff
+    else:
+        delta = nano_delta      # For short periods still count nano
+        get_diff = get_nano_diff
+    reduced_samples = [samples[-1]]
+    for i in range(len(samples) - 2, -1, -1):
+        diff += get_diff(samples[i], samples[i + 1])
+        if diff > delta:
+            reduced_samples.append(samples[i])
+            diff = 0
+    return list(reversed(reduced_samples))
+
+
+def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
+    """Reduce the size of a list of samples, keeping every nth sample and
+    removing the rest. The samples can be grouped together into blocks, so 
+    that every nth block is kept.
+
+    Args:
+        samples (list): List of samples
+        n (int): Every nth sample (or block of samples) will be kept.
+        block_size (int, optional): Number of samples per block. Defaults to 1.
+
+    Returns:
+        list: Reduced list of samples.
+    """
+    if block_size == 1:
+        return samples[::n]
+    else:
+        return [item for i, item in enumerate(samples) if
+                (i + block_size) // block_size % n == 0]
+
+
+def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
+    """Reduce the size of a list of samples by removing every nth sample. The
+    samples can be grouped together into blocks, so that every nth block is
+    removed.
+
+    Args:
+        samples (list): List of samples
+        n (int): Every nth sample (or block of samples) will be removed.
+        block_size (int, optional): Number of samples per block. Defaults to 1.
+
+    Returns:
+        list: Reduced list of samples.
+    """
+    if block_size == 1:
+        return [item for i, item in enumerate(samples) if (i + 1) % n != 0]
+    else:
+        return [item for i, item in enumerate(samples) if
+                (i + block_size) // block_size % n != 0]
+
