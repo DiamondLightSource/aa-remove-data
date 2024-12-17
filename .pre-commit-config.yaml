@@ -22,3 +22,5 @@ repos:
         entry: ruff format --force-exclude
         types: [python]
         require_serial: true
+
+exclude: "^src/aa_remove_data/generated/EPICSEvent_pb2.py"
