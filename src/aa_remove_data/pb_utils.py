@@ -147,7 +147,7 @@ class PBUtils:
         self.header.type = pv_type
 
         sample_class = self.get_proto_class()
-        self.samples = [sample_class() for n in range(samples)]
+        self.samples = [sample_class() for _ in range(samples)]
         time_gap = seconds_gap * 10**9 + nano_gap
         time = 0
         for i, sample in enumerate(self.samples):
@@ -187,7 +187,6 @@ class PBUtils:
                     ["wc", "-l", filepath], stdout=subprocess.PIPE, text=True
                 )
                 self._total_lines = int(result.stdout.split()[0])
-                print(self._total_lines)
                 first_line = self._restore_newline_chars(f.readline().strip())
                 self.header.ParseFromString(first_line)
                 f.seek(0)
@@ -200,7 +199,7 @@ class PBUtils:
                 self.chunked = True
             self._start_line = end_line
             sample_class = self.get_proto_class()
-            self.samples = [sample_class() for n in range(len(lines))]
+            self.samples = [sample_class() for _ in range(len(lines))]
             for i, sample in enumerate(self.samples):
                 line = self._restore_newline_chars(lines[i].strip())
                 sample.ParseFromString(line)
@@ -258,11 +257,11 @@ def print_header():
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
     if lines < 0:
         raise ValueError(f"Cannot have a negative number of lines ({lines}).")
-    pb = PBUtils(pb_file)
+    pb = PBUtils(pb_file, chunk_size=lines)
     pvname = pb.header.pvname
     year = pb.header.year
     print(f"Name: {pvname}, Type: {pb.pv_type}, Year: {year}")
-    if lines > 0:
+    if pb.samples:
         print(f"DATE{' ' * 19}SECONDS{' ' * 5}NANO{' ' * 9}VAL")
-        for i in range(lines):
-            print(pb.format_datastr(pb.samples[i], year).strip())
+        for sample in pb.samples:
+            print(pb.format_datastr(sample, year).strip())
