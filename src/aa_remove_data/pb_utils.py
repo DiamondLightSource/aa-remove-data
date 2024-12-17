@@ -127,6 +127,7 @@ class PBUtils:
         pv_type: int = 6,
         samples: int = 100,
         year: int = 2024,
+        start: int = 0,
         seconds_gap: int = 1,
         nano_gap: int = 0,
     ):

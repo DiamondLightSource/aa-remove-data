@@ -1,9 +1,6 @@
-import argparse
-from typing import Any, Callable
 import time
-from pathlib import Path
-
-from aa_remove_data.pb_utils import PBUtils
+from collections.abc import Callable
+from typing import Any
 
 
 def get_nano_diff(sample1: type, sample2: type) -> int:
@@ -77,11 +74,11 @@ def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
     i = len(samples) - 1
     diff = 0
     assert nano_delta >= 1, "Must have a period of more than 1 nanosecond."
-    if seconds_delta >= 5:      # Save time for long periods by ignoring nano
+    if seconds_delta >= 5:  # Save time for long periods by ignoring nano
         delta = seconds_delta
         get_diff = get_seconds_diff
     else:
-        delta = nano_delta      # For short periods still count nano
+        delta = nano_delta  # For short periods still count nano
         get_diff = get_nano_diff
     reduced_samples = [samples[-1]]
     for i in range(len(samples) - 2, -1, -1):
@@ -92,7 +89,9 @@ def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
     return list(reversed(reduced_samples))
 
 
-def get_index_at_timestamp(samples: list, seconds: int, nano: int = 0) -> tuple[int, float]:
+def get_index_at_timestamp(
+    samples: list, seconds: int, nano: int = 0
+) -> tuple[int, float]:
     """Get index of the sample closest to a timestamp.
 
     Args:
@@ -127,7 +126,7 @@ def remove_before_ts(samples: list, seconds: int, nano: int = 0) -> list:
     """
     index, diff = get_index_at_timestamp(samples, seconds, nano)
     if diff > 0:
-        return samples[index + 1:]
+        return samples[index + 1 :]
     else:
         return samples[index:]
 
@@ -145,14 +144,14 @@ def remove_after_ts(samples: list, seconds: int, nano: int = 0) -> list:
     """
     index, diff = get_index_at_timestamp(samples, seconds, nano)
     if diff > 0:
-        return samples[:index + 1]
+        return samples[: index + 1]
     else:
         return samples[:index]
 
 
 def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     """Reduce the size of a list of samples, keeping every nth sample and
-    removing the rest. The samples can be grouped together into blocks, so 
+    removing the rest. The samples can be grouped together into blocks, so
     that every nth block is kept.
 
     Args:
@@ -166,8 +165,11 @@ def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     if block_size == 1:
         return samples[::n]
     else:
-        return [item for i, item in enumerate(samples) if
-                (i + block_size) // block_size % n == 0]
+        return [
+            item
+            for i, item in enumerate(samples)
+            if (i + block_size) // block_size % n == 0
+        ]
 
 
 def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
@@ -186,5 +188,8 @@ def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     if block_size == 1:
         return [item for i, item in enumerate(samples) if (i + 1) % n != 0]
     else:
-        return [item for i, item in enumerate(samples) if
-                (i + block_size) // block_size % n != 0]
+        return [
+            item
+            for i, item in enumerate(samples)
+            if (i + block_size) // block_size % n != 0
+        ]
