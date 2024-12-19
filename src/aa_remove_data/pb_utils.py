@@ -74,6 +74,7 @@ class PBUtils:
         """
         # Split the enum name by underscores and capitalize each part
         parts = self.pv_type.split("_")
+        parts = [x.replace("WAVEFORM", "Vector") for x in parts]
         return "".join(part.capitalize() for part in parts)
 
     def convert_to_datetime(self, year: int, seconds: int) -> datetime:
@@ -85,7 +86,13 @@ class PBUtils:
         Returns:
             datetime: A datetime object of the correct date and time.
         """
-        return datetime(year, 1, 1) + timedelta(seconds=seconds)
+        date_time = datetime(year, 1, 1) + timedelta(seconds=seconds)
+        if date_time.year != year:
+            raise ValueError(
+                f"Seconds ({seconds}) should not reach one year or be negative."
+                + "\nOne year = 31,536,000s, leap year = 31,622,400s."
+            )
+        return date_time
 
     def format_datastr(self, sample: type, year: int) -> str:
         """Get a string containing information about a sample.
@@ -122,8 +129,8 @@ class PBUtils:
         # Ensure self.pv_type is set first.
         if not self.pv_type:
             self.pv_type = self.get_pv_type()
-        pv_type_camel = self._get_proto_class_name()
-        proto_class = getattr(EPICSEvent_pb2, pv_type_camel)
+        proto_class_name = self._get_proto_class_name()
+        proto_class = getattr(EPICSEvent_pb2, proto_class_name)
         return proto_class
 
     def generate_test_samples(
@@ -142,6 +149,7 @@ class PBUtils:
             samples (int, optional): Number of samples to be generated.
             Defaults to 100.
             year (int, optional): Year associated with samples. Defaults to 2024.
+            start: Initial number of seconds for first sample.
             seconds_gap (int, optional): Gap in seconds between samples.
             start (int, optional): Initial number of seconds for first sample.
             Defaults to 1.
@@ -255,6 +263,7 @@ def pb_2_txt():
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     txt_file = Path(args.txt_filename)
+    # Validation
     if not pb_file.is_file():
         raise FileNotFoundError(f"The file {pb_file} does not exist.")
     if pb_file.suffix != ".pb":
@@ -274,12 +283,14 @@ def print_header():
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     lines = args.lines
+    # Validation
     if not pb_file.is_file():
         raise FileNotFoundError(f"The file {pb_file} does not exist.")
     if pb_file.suffix != ".pb":
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
     if lines < 0:
         raise ValueError(f"Cannot have a negative number of lines ({lines}).")
+
     pb = PBUtils(pb_file, chunk_size=lines)
     pvname = pb.header.pvname
     year = pb.header.year
