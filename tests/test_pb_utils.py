@@ -246,6 +246,31 @@ def test_generate_test_samples_number_of_samples():
         assert len(pb.samples) == n
 
 
+def test_generate_test_samples_all_types():
+    pv_type_enum = {  # Copied from EPICSEvent.proto
+        "SCALAR_STRING": 0,
+        "SCALAR_SHORT": 1,
+        "SCALAR_FLOAT": 2,
+        "SCALAR_ENUM": 3,
+        "SCALAR_BYTE": 4,
+        "SCALAR_INT": 5,
+        "SCALAR_DOUBLE": 6,
+        "WAVEFORM_STRING": 7,
+        "WAVEFORM_SHORT": 8,
+        "WAVEFORM_FLOAT": 9,
+        "WAVEFORM_ENUM": 10,
+        # "WAVEFORM_BYTE": 11, proto class doesn't exist - see above
+        "WAVEFORM_INT": 12,
+        "WAVEFORM_DOUBLE": 13,
+        "V4_GENERIC_BYTES": 14,
+    }
+    pb = PBUtils()
+    for pv_type, num in pv_type_enum.items():
+        pb.generate_test_samples(pv_type=num)
+        assert pb.pv_type == pv_type
+        assert pb.samples
+
+
 def test_write_to_txt():
     pb = PBUtils()
     pb.header.ParseFromString(b"\x08\x06\x12\x04test\x18\xe8\x0f")
@@ -282,26 +307,27 @@ def test_read_write_pb():
 
 
 def test_read_write_pb_all_types():
-    test_data_prefixes = (
-        "SCALAR_BYTE_",
-        "SCALAR_DOUBLE_",
-        "SCALAR_ENUM_",
-        "SCALAR_FLOAT_",
-        "SCALAR_INT_",
-        "SCALAR_SHORT_",
-        "SCALAR_STRING_",
-        "WAVEFORM_DOUBLE_",
-        "WAVEFORM_ENUM_",
-        "WAVEFORM_FLOAT_",
-        "WAVEFORM_INT_",
-        "WAVEFORM_SHORT_",
-        "WAVEFORM_STRING_",
-        "V4_GENERIC_BYTES_",
+    pv_types = (
+        "SCALAR_BYTE",
+        "SCALAR_DOUBLE",
+        "SCALAR_ENUM",
+        "SCALAR_FLOAT",
+        "SCALAR_INT",
+        "SCALAR_SHORT",
+        "SCALAR_STRING",
+        "WAVEFORM_DOUBLE",
+        "WAVEFORM_ENUM",
+        "WAVEFORM_FLOAT",
+        "WAVEFORM_INT",
+        "WAVEFORM_SHORT",
+        "WAVEFORM_STRING",
+        "V4_GENERIC_BYTES",
     )
-    for prefix in test_data_prefixes:
-        read = Path(f"tests/test_data/{prefix}test_data.pb")
-        write = Path(f"tests/test_data/result_write_{prefix}test_data.pb")
+    for pv_type in pv_types:
+        read = Path(f"tests/test_data/{pv_type}_test_data.pb")
+        write = Path(f"tests/test_data/result_write_{pv_type}_test_data.pb")
         pb = PBUtils(read)
+        assert pb.pv_type == pv_type
         pb.write_pb(write)
         are_identical = filecmp.cmp(read, write, shallow=False)
         if are_identical is True:
@@ -316,3 +342,68 @@ def generate_test_data():
         pb._write_started = False
         pb.write_to_txt(Path(f"tests/test_data/{pb.pv_type}_test_data.txt"))
         pb.write_pb(Path(f"tests/test_data/{pb.pv_type}_test_data.pb"))
+
+
+def test_chunking_read_all_types():
+    pv_types = (
+        "SCALAR_BYTE",
+        "SCALAR_DOUBLE",
+        "SCALAR_ENUM",
+        "SCALAR_FLOAT",
+        "SCALAR_INT",
+        "SCALAR_SHORT",
+        "SCALAR_STRING",
+        "WAVEFORM_DOUBLE",
+        "WAVEFORM_ENUM",
+        "WAVEFORM_FLOAT",
+        "WAVEFORM_INT",
+        "WAVEFORM_SHORT",
+        "WAVEFORM_STRING",
+        "V4_GENERIC_BYTES",
+    )
+    for pv_type in pv_types:
+        read_file = Path(f"tests/test_data/{pv_type}_test_data.pb")
+        pb = PBUtils(read_file)
+        assert pb.chunked is False
+        pb_chunked = PBUtils(chunk_size=7)
+        for i, sample in enumerate(pb.samples):
+            if i % 7 == 0:
+                pb_chunked.read_pb(read_file)
+                assert pb_chunked.chunked is True
+                # Check exactly 7 samples is read each time, other than the last
+                # chunk which will have the remaining samples (< 7).
+                assert len(pb_chunked.samples) in (7, len(pb.samples) - i)
+            assert pb_chunked.samples[i % 7] == sample
+        assert pb_chunked.read_done is True
+
+
+def test_chunking_read_write_all_types():
+    pv_types = (
+        "SCALAR_BYTE",
+        "SCALAR_DOUBLE",
+        "SCALAR_ENUM",
+        "SCALAR_FLOAT",
+        "SCALAR_INT",
+        "SCALAR_SHORT",
+        "SCALAR_STRING",
+        "WAVEFORM_DOUBLE",
+        "WAVEFORM_ENUM",
+        "WAVEFORM_FLOAT",
+        "WAVEFORM_INT",
+        "WAVEFORM_SHORT",
+        "WAVEFORM_STRING",
+        "V4_GENERIC_BYTES",
+    )
+    for pv_type in pv_types:
+        read_file = Path(f"tests/test_data/{pv_type}_test_data.pb")
+        write_file = Path(f"tests/test_data/write_chunked_{pv_type}_test_data.pb")
+        pb = PBUtils(read_file, chunk_size=13)
+        pb.write_pb(write_file)
+        assert pb.read_done is False
+        while pb.read_done is False:
+            pb.read_pb(read_file)
+            pb.write_pb(write_file)
+        are_identical = filecmp.cmp(read_file, write_file, shallow=False)
+        if are_identical is True:
+            write_file.unlink()  # Delete results file if test passes
+        assert are_identical is True
