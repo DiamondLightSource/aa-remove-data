@@ -133,6 +133,22 @@ class PBUtils:
         proto_class = getattr(EPICSEvent_pb2, proto_class_name)
         return proto_class
 
+    def generate_test_value(self, val: int) -> str | bytes | int:
+        """Generate an appropriate value for a sample based on it's pv type.
+
+        Args:
+            val (int): The original value.
+
+        Returns:
+            str | bytes | int: The value converted to an oppropriate type.
+        """
+        if self.pv_type.endswith("STRING"):
+            return str(val)
+        elif self.pv_type.endswith("BYTE") or self.pv_type.endswith("BYTES"):
+            return val.to_bytes(2, byteorder="big")
+        else:
+            return val
+
     def generate_test_samples(
         self,
         pv_type: int = 6,

@@ -335,7 +335,7 @@ def test_read_write_pb_all_types():
         assert are_identical is True
 
 
-def generate_test_data():
+def generate_test_data():  # Not a test - used to generate test data.
     pb = PBUtils()
     for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14):
         pb.generate_test_samples(pv_type=i, start=i * 100)
