@@ -62,14 +62,17 @@ class PBUtils:
         return data
 
     def _get_proto_class_name(self) -> str:
-        """Convert the name of a pv type to CamelCase to match the proto class
-        name.
+        """Convert the name of a pv type to match the proto class name. This
+        involves coverting to CamelCase and replaying 'WAVEFORM' with 'Vector'.
+        The full mapping is described in
+        epicsarchiverap/src/main/edu/stanford/slac/archiverappliance/PB/data/DBR2PBTypeMapping.java
 
         Returns:
             str: Name of proto class, e.g VectorDouble.
         """
         # Split the enum name by underscores and capitalize each part
         parts = self.pv_type.split("_")
+        parts = [x.replace("WAVEFORM", "Vector") for x in parts]
         return "".join(part.capitalize() for part in parts)
 
     def convert_to_datetime(self, year: int, seconds: int) -> datetime:
@@ -81,7 +84,13 @@ class PBUtils:
         Returns:
             datetime: A datetime object of the correct date and time.
         """
-        return datetime(year, 1, 1) + timedelta(seconds=seconds)
+        date_time = datetime(year, 1, 1) + timedelta(seconds=seconds)
+        if date_time.year != year:
+            raise ValueError(
+                f"Seconds ({seconds}) should not reach one year or be negative."
+                + "\nOne year = 31,536,000s, leap year = 31,622,400s."
+            )
+        return date_time
 
     def format_datastr(self, sample: type, year: int) -> str:
         """Get a string containing information about a sample.
@@ -118,8 +127,8 @@ class PBUtils:
         # Ensure self.pv_type is set first.
         if not self.pv_type:
             self.pv_type = self.get_pv_type()
-        pv_type_camel = self._get_proto_class_name()
-        proto_class = getattr(EPICSEvent_pb2, pv_type_camel)
+        proto_class_name = self._get_proto_class_name()
+        proto_class = getattr(EPICSEvent_pb2, proto_class_name)
         return proto_class
 
     def generate_test_samples(
@@ -138,6 +147,7 @@ class PBUtils:
             samples (int, optional): Number of samples to be generated.
             Defaults to 100.
             year (int, optional): Year associated with samples. Defaults to 2024.
+            start: Initial number of seconds for first sample.
             seconds_gap (int, optional): Gap in seconds between samples.
             Defaults to 1.
             nano_gap (int, optional): Gap in nanoseconds between samples.
@@ -199,8 +209,8 @@ class PBUtils:
             else:
                 self.chunked = True
             self._start_line = end_line
-            sample_class = self.get_proto_class()
-            self.samples = [sample_class() for _ in range(len(lines))]
+            proto_class = self.get_proto_class()
+            self.samples = [proto_class() for _ in range(len(lines))]
             for i, sample in enumerate(self.samples):
                 line = self._restore_newline_chars(lines[i].strip())
                 sample.ParseFromString(line)
@@ -236,10 +246,12 @@ def pb_2_txt():
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     txt_file = Path(args.txt_filename)
+    # Validation
     if not pb_file.is_file():
         raise FileNotFoundError(f"The file {pb_file} does not exist.")
     if pb_file.suffix != ".pb":
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
+
     pb = PBUtils(pb_file)
     pb.write_to_txt(txt_file)
 
@@ -252,12 +264,14 @@ def print_header():
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     lines = args.lines
+    # Validation
     if not pb_file.is_file():
         raise FileNotFoundError(f"The file {pb_file} does not exist.")
     if pb_file.suffix != ".pb":
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
     if lines < 0:
         raise ValueError(f"Cannot have a negative number of lines ({lines}).")
+
     pb = PBUtils(pb_file, chunk_size=lines)
     pvname = pb.header.pvname
     year = pb.header.year
