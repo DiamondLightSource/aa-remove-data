@@ -131,6 +131,22 @@ class PBUtils:
         proto_class = getattr(EPICSEvent_pb2, proto_class_name)
         return proto_class
 
+    def generate_test_value(self, val: int) -> str | bytes | int:
+        """Generate an appropriate value for a sample based on it's pv type.
+
+        Args:
+            val (int): The original value.
+
+        Returns:
+            str | bytes | int: The value converted to an oppropriate type.
+        """
+        if self.pv_type.endswith("STRING"):
+            return str(val)
+        elif self.pv_type.endswith("BYTE") or self.pv_type.endswith("BYTES"):
+            return val.to_bytes()
+        else:
+            return val
+
     def generate_test_samples(
         self,
         pv_type: int = 6,
@@ -157,6 +173,7 @@ class PBUtils:
         self.header.year = year
         self.header.type = pv_type
 
+        self.pv_type = self.get_pv_type()
         sample_class = self.get_proto_class()
         self.samples = [sample_class() for _ in range(samples)]
         time_gap = seconds_gap * 10**9 + nano_gap
@@ -164,7 +181,12 @@ class PBUtils:
         for i, sample in enumerate(self.samples):
             sample.secondsintoyear = time // 10**9
             sample.nano = time % 10**9
-            sample.val = i
+            if self.pv_type.startswith("WAVEFORM"):
+                sample.val.extend(
+                    [self.generate_test_value(i * 5 + j) for j in range(5)]
+                )
+            else:
+                sample.val = self.generate_test_value(i)
             time += time_gap
 
     def write_to_txt(self, filepath: PathLike):
@@ -198,7 +220,7 @@ class PBUtils:
                     ["wc", "-l", filepath], stdout=subprocess.PIPE, text=True
                 )
                 self._total_lines = int(result.stdout.split()[0])
-                first_line = self._restore_newline_chars(f.readline().strip())
+                first_line = self._restore_newline_chars(f.readline().rstrip(b"\n"))
                 self.header.ParseFromString(first_line)
                 f.seek(0)
                 self._start_line += 1
@@ -212,7 +234,7 @@ class PBUtils:
             proto_class = self.get_proto_class()
             self.samples = [proto_class() for _ in range(len(lines))]
             for i, sample in enumerate(self.samples):
-                line = self._restore_newline_chars(lines[i].strip())
+                line = self._restore_newline_chars(lines[i].rstrip(b"\n"))
                 sample.ParseFromString(line)
 
     def write_pb(self, filepath: PathLike):
