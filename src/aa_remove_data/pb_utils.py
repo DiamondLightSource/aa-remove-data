@@ -143,7 +143,7 @@ class PBUtils:
         if self.pv_type.endswith("STRING"):
             return str(val)
         elif self.pv_type.endswith("BYTE") or self.pv_type.endswith("BYTES"):
-            return val.to_bytes()
+            return val.to_bytes(2)
         else:
             return val
 
