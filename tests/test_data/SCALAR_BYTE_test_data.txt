@@ -1,4 +1,4 @@
-test, SCALAR_BYTE, 2024
+generated_test_data, SCALAR_BYTE, 2024
 DATE                   SECONDS     NANO         VAL
 2024-01-01 00:06:40         400            0    b'\x00\x00'
 2024-01-01 00:06:41         401            0    b'\x00\x01'
