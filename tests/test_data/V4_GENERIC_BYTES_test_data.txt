@@ -1,4 +1,4 @@
-test, V4_GENERIC_BYTES, 2024
+generated_test_data, V4_GENERIC_BYTES, 2024
 DATE                   SECONDS     NANO         VAL
 2024-01-01 00:23:20        1400            0    b'\x00\x00'
 2024-01-01 00:23:21        1401            0    b'\x00\x01'

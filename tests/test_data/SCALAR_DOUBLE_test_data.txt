@@ -1,4 +1,4 @@
-test, SCALAR_DOUBLE, 2024
+generated_test_data, SCALAR_DOUBLE, 2024
 DATE                   SECONDS     NANO         VAL
 2024-01-01 00:10:00         600            0    0.0
 2024-01-01 00:10:01         601            0    1.0

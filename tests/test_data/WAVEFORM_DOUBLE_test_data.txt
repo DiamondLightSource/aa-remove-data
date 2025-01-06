@@ -1,4 +1,4 @@
-test, WAVEFORM_DOUBLE, 2024
+generated_test_data, WAVEFORM_DOUBLE, 2024
 DATE                   SECONDS     NANO         VAL
 2024-01-01 00:21:40        1300            0    [0.0, 1.0, 2.0, 3.0, 4.0]
 2024-01-01 00:21:41        1301            0    [5.0, 6.0, 7.0, 8.0, 9.0]
