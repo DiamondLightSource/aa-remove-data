@@ -36,7 +36,12 @@ dev = [
 ]
 
 [project.scripts]
+aa-remove-data-after = "aa_remove_data.remove_data:aa_remove_data_after"
+aa-remove-data-before = "aa_remove_data.remove_data:aa_remove_data_before"
+aa-reduce-data-by-factor = "aa_remove_data.remove_data:aa_reduce_by_factor"
+aa-reduce-data-freq = "aa_remove_data.remove_data:aa_reduce_freq"
 aa-remove-data = "aa_remove_data.__main__:main"
+aa-remove-data-every-nth = "aa_remove_data.remove_data:aa_remove_every_nth"
 aa-print-header = "aa_remove_data.pb_utils:print_header"
 PB_2_TXT = "aa_remove_data.pb_utils:pb_2_txt"
 
