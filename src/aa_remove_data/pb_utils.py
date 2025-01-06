@@ -172,7 +172,7 @@ class PBUtils:
             nano_gap (int, optional): Gap in nanoseconds between samples.
             Defaults to 0.
         """
-        self.header.pvname = "test"
+        self.header.pvname = "generated_test_data"
         self.header.year = year
         self.header.type = pv_type
 

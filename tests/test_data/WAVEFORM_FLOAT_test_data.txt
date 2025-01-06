@@ -1,4 +1,4 @@
-test, WAVEFORM_FLOAT, 2024
+generated_test_data, WAVEFORM_FLOAT, 2024
 DATE                   SECONDS     NANO         VAL
 2024-01-01 00:15:00         900            0    [0.0, 1.0, 2.0, 3.0, 4.0]
 2024-01-01 00:15:01         901            0    [5.0, 6.0, 7.0, 8.0, 9.0]
