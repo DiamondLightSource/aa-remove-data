@@ -43,7 +43,7 @@ aa-reduce-data-freq = "aa_remove_data.remove_data:aa_reduce_freq"
 aa-remove-data = "aa_remove_data.__main__:main"
 aa-remove-data-every-nth = "aa_remove_data.remove_data:aa_remove_every_nth"
 aa-print-header = "aa_remove_data.pb_utils:print_header"
-PB_2_TXT = "aa_remove_data.pb_utils:pb_2_txt"
+pb-2-txt = "aa_remove_data.pb_utils:pb_2_txt"
 
 [project.urls]
 GitHub = "https://github.com/DiamondLightSource/aa-remove-data"
