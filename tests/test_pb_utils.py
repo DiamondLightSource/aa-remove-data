@@ -388,13 +388,20 @@ def test_chunking_read_write_all_types():
     for pv_type in pv_types:
         read_file = Path(f"tests/test_data/{pv_type}_test_data.pb")
         write_file = Path(f"tests/test_data/write_chunked_{pv_type}_test_data.pb")
+        write_file2 = Path(f"tests/test_data/write_chunked_{pv_type}_test_data2.pb")
         pb = PBUtils(read_file, chunk_size=13)
         pb.write_pb(write_file)
+        pb.write_pb(write_file2)
         assert pb.read_done is False
         while pb.read_done is False:
             pb.read_pb(read_file)
             pb.write_pb(write_file)
+            pb.write_pb(write_file2)
         are_identical = filecmp.cmp(read_file, write_file, shallow=False)
+        are_identical2 = filecmp.cmp(read_file, write_file2, shallow=False)
         if are_identical is True:
             write_file.unlink()  # Delete results file if test passes
         assert are_identical is True
+        if are_identical2 is True:
+            write_file2.unlink()  # Delete results file if test passes
+        assert are_identical2 is True
