@@ -38,7 +38,7 @@ dev = [
 [project.scripts]
 aa-remove-data = "aa_remove_data.__main__:main"
 aa-print-header = "aa_remove_data.pb_utils:print_header"
-PB_2_TXT = "aa_remove_data.pb_utils:pb_2_txt"
+pb-2-txt = "aa_remove_data.pb_utils:pb_2_txt"
 
 [project.urls]
 GitHub = "https://github.com/DiamondLightSource/aa-remove-data"

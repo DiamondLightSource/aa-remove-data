@@ -241,6 +241,7 @@ def pb_2_txt():
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
     pb = PBUtils(pb_file)
     pb.write_to_txt(txt_file)
+    print("Write completed!")
 
 
 def print_header():
