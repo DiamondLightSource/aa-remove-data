@@ -109,7 +109,7 @@ def get_index_at_timestamp(
         between the target timestamp and sample.
     """
     target = seconds * 10**9 + nano
-    last_diff = target - samples[0].secondsintoyear * 10**9 + samples[0].nano
+    last_diff = target - (samples[0].secondsintoyear * 10**9 + samples[0].nano)
     for i, sample in enumerate(samples):
         diff = target - (sample.secondsintoyear * 10**9 + sample.nano)
         if abs(last_diff) < abs(diff):
