@@ -19,8 +19,6 @@ class PBUtils:
             read. Defaults to None.
             chunk_size (Optional[int], optional): Number of lines to read/write
             at one time.
-            chunk_size (Optional[int], optional): Number of lines to read/write
-            at one time.
         """
         self.header = EPICSEvent_pb2.PayloadInfo()  # type: ignore
         self.samples = []
@@ -29,7 +27,7 @@ class PBUtils:
         self.read_done = False
         self._chunk_size = chunk_size
         self._start_line = 0
-        self._write_started = False
+        self._write_started = []
         if filepath:
             self.read_pb(filepath)
 
@@ -214,17 +212,20 @@ class PBUtils:
         Args:
             filepath (PathLike): Path to file to be written.
         """
+        header_b = self._replace_newline_chars(self.header.SerializeToString()) + b"\n"
         samples_b = [
             self._replace_newline_chars(sample.SerializeToString()) + b"\n"
             for sample in self.samples
         ]
-        if self._write_started is False:  # Write header, start new file
+        if (
+            filepath not in self._write_started or self.chunked is False
+        ):  # Write header, start new file
             header_b = (
                 self._replace_newline_chars(self.header.SerializeToString()) + b"\n"
             )
             with open(filepath, "wb") as f:
                 f.writelines([header_b] + samples_b)
-            self._write_started = True
+            self._write_started.append(filepath)
         else:  # Add to existing file
             with open(filepath, "ab") as f:
                 f.writelines(samples_b)
@@ -244,6 +245,7 @@ def pb_2_txt():
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
     pb = PBUtils(pb_file)
     pb.write_to_txt(txt_file)
+    print("Write completed!")
 
 
 def print_header():
