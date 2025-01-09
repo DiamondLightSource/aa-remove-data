@@ -238,9 +238,9 @@ def aa_reduce_freq():
         pb.write_pb(backup_pb)
         pb.samples = reduce_freq(pb.samples, period=args.period)
         pb.write_pb(new_pb)
-    if args.write_txt:
-        txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
-        pb.write_to_txt(txt_filepath)
+        if args.write_txt:
+            txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
+            pb.write_to_txt(txt_filepath)
 
 
 def aa_reduce_by_factor():
@@ -274,9 +274,9 @@ def aa_reduce_by_factor():
         pb.write_pb(backup_pb)
         pb.samples = keep_every_nth(pb.samples, args.factor, block_size=args.block)
         pb.write_pb(new_pb)
-    if args.write_txt:
-        txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
-        pb.write_to_txt(txt_filepath)
+        if args.write_txt:
+            txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
+            pb.write_to_txt(txt_filepath)
 
 
 def aa_remove_every_nth():
@@ -310,9 +310,9 @@ def aa_remove_every_nth():
         pb.write_pb(backup_pb)
         pb.samples = remove_every_nth(pb.samples, args.n, block_size=args.block)
         pb.write_pb(new_pb)
-    if args.write_txt:
-        txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
-        pb.write_to_txt(txt_filepath)
+        if args.write_txt:
+            txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
+            pb.write_to_txt(txt_filepath)
 
 
 def aa_remove_data_before():
@@ -361,9 +361,9 @@ def aa_remove_data_before():
         pb.write_pb(backup_pb)
         pb.samples = remove_before_ts(pb.samples, seconds, nano=nano)
         pb.write_pb(new_pb)
-    if args.write_txt:
-        txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
-        pb.write_to_txt(txt_filepath)
+        if args.write_txt:
+            txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
+            pb.write_to_txt(txt_filepath)
 
 
 def aa_remove_data_after():
@@ -412,6 +412,6 @@ def aa_remove_data_after():
         pb.write_pb(backup_pb)
         pb.samples = remove_after_ts(pb.samples, seconds, nano=nano)
         pb.write_pb(new_pb)
-    if args.write_txt:
-        txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
-        pb.write_to_txt(txt_filepath)
+        if args.write_txt:
+            txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
+            pb.write_to_txt(txt_filepath)

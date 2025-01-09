@@ -198,13 +198,19 @@ class PBUtils:
         pvname = self.header.pvname
         year = self.header.year
         data_strs = [self.format_datastr(sample, year) for sample in self.samples]
-        with open(filepath, "w") as f:
-            # Write header
-            f.write(f"{pvname}, {self.pv_type}, {year}\n")
-            # Write column titles
-            f.write(f"DATE{' ' * 19}SECONDS{' ' * 5}NANO{' ' * 9}VAL\n")
-            # Write body
-            f.writelines(data_strs)
+        if filepath not in self._write_started or self.chunked is False:
+            with open(filepath, "w") as f:
+                # Write header
+                f.write(f"{pvname}, {self.pv_type}, {year}\n")
+                # Write column titles
+                f.write(f"DATE{' ' * 19}SECONDS{' ' * 5}NANO{' ' * 9}VAL\n")
+                # Write body
+                f.writelines(data_strs)
+                self._write_started.append(filepath)
+        else:
+            with open(filepath, "a") as f:
+                # Write body
+                f.writelines(data_strs)
 
     def read_pb(self, filepath: PathLike):
         """Read a PB file that is structured in the Archiver Appliance format.
