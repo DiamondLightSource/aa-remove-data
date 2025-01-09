@@ -137,8 +137,8 @@ def test_remove_before_ts():
         raise AssertionError(
             "Samples don't match:\n"
             + f"len(samples) = {len(samples)}, should be {len(pb.samples[578:])}\n"
-            + f"samples[0] = {samples[0]}, should be {pb.samples[578:][0]}\n"
-            + f"samples[-1] = {samples[-1]}, should be {pb.samples[578:][-1]}"
+            + f"samples[0] = \n{samples[0]}, should be \n{pb.samples[578:][0]}\n"
+            + f"samples[-1] = \n{samples[-1]}, should be \n{pb.samples[578:][-1]}"
         )
 
 
@@ -151,8 +151,8 @@ def test_remove_before_ts_greater_than_max():
             "Samples don't match:\n"
             + f"len(samples) = {len(samples)}, should be 0. "
             + "Samples should be an empty list\n"
-            + f"samples[0] = {samples[0].secondsintoyear}, shouldn't exist\n"
-            + f"samples[-1] = {samples[-1].secondsintoyear}, shouldn't exist"
+            + f"samples[0] = \n{samples[0]}, shouldn't exist\n"
+            + f"samples[-1] = \n{samples[-1]}, shouldn't exist"
         )
 
 
@@ -164,10 +164,10 @@ def test_remove_before_ts_at_max():
         raise AssertionError(
             "Samples don't match:\n"
             + f"len(samples) = {len(samples)}, should be 1\n"
-            + f"samples[0].secondsintoyear = {samples[0].secondsintoyear}, "
-            + f"should be {pb.samples[-1].secondsintoyear}\n"
-            + f"samples[-1].secondsintoyear = {samples[-1].secondsintoyear}, "
-            + f"should be {pb.samples[-1].secondsintoyear}"
+            + f"samples[0] = \n{samples[0]}, "
+            + f"should be \n{pb.samples[-1]}\n"
+            + f"samples[-1] = \n{samples[-1]}, "
+            + f"should be \n{pb.samples[-1]}"
         )
 
 
@@ -179,10 +179,10 @@ def test_remove_before_ts_lesser_than_min():
         raise AssertionError(
             "Samples don't match:\n"
             + f"len(samples) = {len(samples)}, should be {len(pb.samples)}\n"
-            + f"samples[0].secondsintoyear = {samples[0].secondsintoyear}, "
-            + f"should be {pb.samples[0].secondsintoyear}\n"
-            + f"samples[-1].secondsintoyear = {samples[-1].secondsintoyear}, "
-            + f"should be {pb.samples[-1].secondsintoyear}"
+            + f"samples[0] = \n{samples[0]}, "
+            + f"should be \n{pb.samples[0]}\n"
+            + f"samples[-1] = \n{samples[-1]}, "
+            + f"should be \n{pb.samples[-1]}"
         )
 
 
@@ -194,10 +194,10 @@ def test_remove_before_ts_at_min():
         raise AssertionError(
             "Samples don't match:\n"
             + f"len(samples) = {len(samples)}, should be {len(pb.samples)}\n"
-            + f"samples[0].secondsintoyear = {samples[0].secondsintoyear}, "
-            + "should be {pb.samples[0].secondsintoyear}\n"
-            + f"samples[-1].secondsintoyear = {samples[-1].secondsintoyear}, "
-            + "should be {pb.samples[-1].secondsintoyear}"
+            + f"samples[0] = \n{samples[0]}, "
+            + f"should be \n{pb.samples[0]}\n"
+            + f"samples[-1] = \n{samples[-1]}, "
+            + f"should be \n{pb.samples[-1]}"
         )
 
 
@@ -225,12 +225,12 @@ def test_remove_before_ts_decreasing():
     filename = Path("tests/test_data/SCALAR_SHORT_test_data.pb")
     pb = PBUtils(filename)
     for seconds, nano in zip(
-        range(105, 210), range(0, 10 * 10**9, 30000000), strict=False
+        range(195, 90, -1), range(0, -(10 * 10**9), -30000000), strict=False
     ):
         samples = remove_data.remove_before_ts(pb.samples, seconds, nano=nano)
 
-        if seconds * 10**9 + nano > 199 * 10**9:
-            assert samples == []
+        if seconds * 10**9 + nano < 100 * 10**9:
+            assert samples == pb.samples
         else:
             expected_min_nanoseconds = seconds * 10**9 + nano
             actual_lowest_nanoseconds = (
@@ -239,3 +239,120 @@ def test_remove_before_ts_decreasing():
             assert actual_lowest_nanoseconds >= expected_min_nanoseconds
             if nano == 0:
                 assert actual_lowest_nanoseconds == seconds * 10**9
+
+
+def test_remove_after_ts():
+    filename = Path("tests/test_data/RAW:2025_short.pb")
+    pb = PBUtils(filename)
+    samples = remove_data.remove_after_ts(pb.samples, 111, nano=650000000)
+    if samples != pb.samples[:578]:
+        raise AssertionError(
+            "Samples don't match:\n"
+            + f"len(samples) = {len(samples)}, should be {len(pb.samples[:578])}\n"
+            + f"samples[0] = \n{samples[0]}, should be \n{pb.samples[:578][0]}\n"
+            + f"samples[-1] = \n{samples[-1]}, should be \n{pb.samples[:578][-1]}"
+        )
+
+
+def test_remove_after_ts_greater_than_max():
+    filename = Path("tests/test_data/RAW:2025_short.pb")
+    pb = PBUtils(filename)
+    samples = remove_data.remove_after_ts(pb.samples, 200, nano=650000000)
+    if samples != pb.samples:
+        raise AssertionError(
+            "Samples don't match:\n"
+            + f"len(samples) = {len(samples)}, should be {len(pb.samples)}\n"
+            + f"samples[0] = \n{samples[0]}, "
+            + f"should be \n{pb.samples[0]}\n"
+            + f"samples[-1] = \n{samples[-1]}, "
+            + f"should be \n{pb.samples[-1]}"
+        )
+
+
+def test_remove_after_ts_at_max():
+    filename = Path("tests/test_data/RAW:2025_short.pb")
+    pb = PBUtils(filename)
+    samples = remove_data.remove_after_ts(pb.samples, 193, nano=102601528)
+    if samples != pb.samples:
+        raise AssertionError(
+            "Samples don't match:\n"
+            + f"len(samples) = {len(samples)}, should be {len(pb.samples)}\n"
+            + f"samples[0] = \n{samples[0]}, "
+            + f"should be \n{pb.samples[-1]}\n"
+            + f"samples[-1] = \n{samples[-1]}, "
+            + f"should be \n{pb.samples[-1]}"
+        )
+
+
+def test_remove_after_ts_lesser_than_min():
+    filename = Path("tests/test_data/P:2021_short.pb")
+    pb = PBUtils(filename)
+    samples = remove_data.remove_after_ts(pb.samples, 12743981, nano=650000000)
+    if samples != []:
+        raise AssertionError(
+            "Samples don't match:\n"
+            + f"len(samples) = {len(samples)}, should be 0. "
+            + "Samples should be an empty list\n"
+            + f"samples[0] = {samples[0]}, shouldn't exist\n"
+            + f"samples[-1] = {samples[-1]}, shouldn't exist"
+        )
+
+
+def test_remove_after_ts_at_min():
+    filename = Path("tests/test_data/P:2021_short.pb")
+    pb = PBUtils(filename)
+    samples = remove_data.remove_after_ts(pb.samples, 12743982, nano=176675494)
+    if samples == []:
+        raise AssertionError(
+            "Samples don't match: samples != [pb.samples[0]]\n"
+            + f"Samples = {samples}, should be [{pb.samples[0]}]"
+        )
+    elif samples != [pb.samples[0]]:
+        raise AssertionError(
+            "Samples don't match: samples != [pb.samples[0]\n"
+            + f"len(samples) = {len(samples)}, should be 1\n"
+            + f"samples[0] = {samples[0]}, "
+            + f"should be {pb.samples[0]}\n"
+            + f"samples[-1] = {samples[-1]}, "
+            + f"should be {pb.samples[-1]}"
+        )
+
+
+def test_remove_after_ts_increasing():
+    filename = Path("tests/test_data/SCALAR_SHORT_test_data.pb")
+    pb = PBUtils(filename)
+    for seconds, nano in zip(
+        range(105, 210), range(0, 10 * 10**9, 30000000), strict=False
+    ):
+        samples = remove_data.remove_after_ts(pb.samples, seconds, nano=nano)
+
+        if seconds * 10**9 + nano >= 199 * 10**9:
+            assert samples == pb.samples
+        else:
+            expected_max_nanoseconds = seconds * 10**9 + nano
+            actual_highest_nanoseconds = (
+                samples[-1].secondsintoyear * 10**9 + samples[-1].nano
+            )
+            assert actual_highest_nanoseconds <= expected_max_nanoseconds
+            if nano == 0:
+                assert actual_highest_nanoseconds == seconds * 10**9
+
+
+def test_remove_after_ts_decreasing():
+    filename = Path("tests/test_data/SCALAR_SHORT_test_data.pb")
+    pb = PBUtils(filename)
+    for seconds, nano in zip(
+        range(195, 90, -1), range(0, -(10 * 10**9), -30000000), strict=False
+    ):
+        samples = remove_data.remove_after_ts(pb.samples, seconds, nano=nano)
+
+        if seconds * 10**9 + nano < 100 * 10**9:
+            assert samples == []
+        else:
+            expected_max_nanoseconds = seconds * 10**9 + nano
+            actual_highest_nanoseconds = (
+                samples[-1].secondsintoyear * 10**9 + samples[-1].nano
+            )
+            assert actual_highest_nanoseconds <= expected_max_nanoseconds
+            if nano == 0:
+                assert actual_highest_nanoseconds == seconds * 10**9
