@@ -306,6 +306,18 @@ def test_read_write_pb():
     assert are_identical is True
 
 
+# Takes too long but useful to test occasionally as it's unaltered real data.
+# def test_read_write_long():
+#     read = Path("tests/pb_data/P:2021.pb")
+#     write = Path("tests/pb_data/P:2021_write_result.pb")
+#     pb = PBUtils(read)
+#     pb.write_pb(write)
+#     are_identical = filecmp.cmp(read, write, shallow=False)
+#     if are_identical is True:
+#         write.unlink()  # Delete results file if test passes
+#     assert are_identical is True
+
+
 def test_read_write_pb_all_types():
     pv_types = (
         "SCALAR_BYTE",

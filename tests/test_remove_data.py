@@ -356,3 +356,231 @@ def test_remove_after_ts_decreasing():
             assert actual_highest_nanoseconds <= expected_max_nanoseconds
             if nano == 0:
                 assert actual_highest_nanoseconds == seconds * 10**9
+
+
+def test_keep_every_nth():
+    samples = list(range(1000))
+    for n in range(1, 51):
+        expected = list(range(n - 1, 1000, n))
+        actual = remove_data.keep_every_nth(samples, n)
+        assert actual == expected
+
+
+def test_keep_every_nth_n_too_big():
+    samples = list(range(1000))
+    n = 2000
+    actual = remove_data.keep_every_nth(samples, n)
+    assert actual == []
+
+
+def test_keep_every_nth_n_is_1():
+    samples = list(range(1000))
+    n = 1
+    actual = remove_data.keep_every_nth(samples, n)
+    assert actual == samples
+
+
+def test_keep_every_nth_n_is_0():
+    samples = list(range(1000))
+    n = 0
+    with pytest.raises(ValueError):
+        remove_data.keep_every_nth(samples, n)
+
+
+def test_keep_every_nth_n_is_neg():
+    samples = list(range(1000))
+    n = -5
+    with pytest.raises(ValueError):
+        remove_data.keep_every_nth(samples, n)
+
+
+def test_keep_every_nth_n_is_len():
+    samples = list(range(1000))
+    n = len(samples)
+    actual = remove_data.keep_every_nth(samples, n)
+    assert actual == [samples[-1]]
+
+
+def test_keep_every_nth_blocks():
+    size = 1000
+    samples = list(range(size))
+    for n, block in zip(range(1, 51), range(1, 102, 3), strict=False):
+        expected = [
+            x
+            for x in [
+                num
+                for i in range(block * (n - 1), size, block * n)
+                for num in range(i, i + block)
+            ]
+            if x < size
+        ]
+        actual = remove_data.keep_every_nth(samples, n, block_size=block)
+        assert actual == expected
+
+
+def test_keep_every_nth_block_is_0():
+    samples = list(range(1000))
+    n = 2
+    block = 0
+    with pytest.raises(ValueError):
+        remove_data.keep_every_nth(samples, n, block_size=block)
+
+
+def test_keep_every_nth_block_is_neg():
+    samples = list(range(1000))
+    n = 2
+    block = -1
+    with pytest.raises(ValueError):
+        remove_data.keep_every_nth(samples, n, block_size=block)
+
+
+def test_keep_every_nth_block_too_big():
+    size = 100
+    samples = list(range(size))
+    n = 2
+    block = 100
+    expected = []
+    actual = remove_data.keep_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_keep_every_nth_nblocks_is_len():
+    size = 1000
+    samples = list(range(size))
+    n = 4
+    block = 250
+    expected = samples[750:]
+    actual = remove_data.keep_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_keep_every_nth_nblocks_over_len():
+    size = 1000
+    samples = list(range(size))
+    n = 5
+    block = 225
+    expected = samples[900:]
+    actual = remove_data.keep_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_keep_every_nth_nblocks_way_over_len():
+    size = 1000
+    samples = list(range(size))
+    n = 6
+    block = 225
+    expected = []
+    actual = remove_data.keep_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+# HERE
+
+
+def test_remove_every_nth():
+    size = 100
+    samples = list(range(size))
+    for n in range(2, 51):
+        expected = [i for i in range(size) if (i + 1) % n != 0]
+        actual = remove_data.remove_every_nth(samples, n)
+        assert actual == expected
+
+
+def test_remove_every_nth_n_too_big():
+    samples = list(range(100))
+    n = 101
+    actual = remove_data.remove_every_nth(samples, n)
+    assert actual == samples
+
+
+def test_remove_every_nth_n_is_1():
+    samples = list(range(100))
+    n = 1
+    actual = remove_data.remove_every_nth(samples, n)
+    assert actual == []
+
+
+def test_remove_every_nth_n_is_0():
+    samples = list(range(100))
+    n = 0
+    with pytest.raises(ValueError):
+        remove_data.remove_every_nth(samples, n)
+
+
+def test_remove_every_nth_n_is_neg():
+    samples = list(range(100))
+    n = -5
+    with pytest.raises(ValueError):
+        remove_data.remove_every_nth(samples, n)
+
+
+def test_remove_every_nth_n_is_len():
+    samples = list(range(100))
+    n = len(samples)
+    actual = remove_data.remove_every_nth(samples, n)
+    assert actual == samples[:-1]
+
+
+def test_remove_every_nth_blocks():
+    samples = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    n = 3
+    block = 4
+    expected = [0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17, 18, 19]
+    actual = remove_data.remove_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_remove_every_nth_block_is_0():
+    samples = list(range(100))
+    n = 2
+    block = 0
+    with pytest.raises(ValueError):
+        remove_data.remove_every_nth(samples, n, block_size=block)
+
+
+def test_remove_every_nth_block_is_neg():
+    samples = list(range(100))
+    n = 2
+    block = -1
+    with pytest.raises(ValueError):
+        remove_data.remove_every_nth(samples, n, block_size=block)
+
+
+def test_remove_every_nth_block_too_big():
+    size = 10
+    samples = list(range(size))
+    n = 2
+    block = 100
+    expected = samples
+    actual = remove_data.remove_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_remove_every_nth_nblocks_is_len():
+    size = 100
+    samples = list(range(size))
+    n = 4
+    block = 25
+    expected = samples[:75]
+    actual = remove_data.remove_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_remove_every_nth_nblocks_over_len():
+    size = 1000
+    samples = list(range(size))
+    n = 5
+    block = 225
+    expected = samples[:900]
+    actual = remove_data.remove_every_nth(samples, n, block_size=block)
+    assert actual == expected
+
+
+def test_remove_every_nth_nblocks_way_over_len():
+    size = 100
+    samples = list(range(size))
+    n = 6
+    block = 25
+    expected = samples
+    actual = remove_data.remove_every_nth(samples, n, block_size=block)
+    assert actual == expected
