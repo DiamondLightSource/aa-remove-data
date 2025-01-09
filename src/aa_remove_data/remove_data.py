@@ -167,6 +167,10 @@ def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     Returns:
         list: Reduced list of samples.
     """
+    if n <= 0:
+        raise ValueError(f"n = {n}, must be >= 1")
+    elif block_size <= 0:
+        raise ValueError(f"block_size = {block_size}, must be >= 1")
     if block_size == 1:
         return samples[n - 1 :: n]
     else:
@@ -190,6 +194,10 @@ def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     Returns:
         list: Reduced list of samples.
     """
+    if n <= 0:
+        raise ValueError(f"n = {n}, must be >= 1")
+    elif block_size <= 0:
+        raise ValueError(f"block_size = {block_size}, must be >= 1")
     if block_size == 1:
         return [item for i, item in enumerate(samples) if (i + 1) % n != 0]
     else:
