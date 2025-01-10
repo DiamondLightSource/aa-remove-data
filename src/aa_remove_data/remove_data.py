@@ -208,14 +208,45 @@ def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
         ]
 
 
+def add_generic_args(parser):
+    parser.add_argument(
+        "filename", type=str, help="path/to/file.pb of PB file being processed"
+    )
+    parser.add_argument(
+        "--new-filename",
+        type=str,
+        default=None,
+        help="path/to/file.pb of new file to write to "
+        + "(default: writes over original file)",
+    )
+    parser.add_argument(
+        "--backup-filename",
+        type=str,
+        default=None,
+        help="path/to/file.pb of a backup file, "
+        + "(default: {original_filename}_backup.pb)",
+    )
+    parser.add_argument(
+        "-t",
+        "--write-txt",
+        action="store_true",
+        help="write result to a .txt file (default: False)",
+    )
+    parser.add_argument(
+        "--chunk",
+        type=int,
+        default=10000000,
+        help="chunk size in lines (default: 10000000)",
+    )
+    return parser
+
+
 def aa_reduce_freq():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str)
-    parser.add_argument("period", type=float)
-    parser.add_argument("--new_filename", type=str, default=None)
-    parser.add_argument("--backup_filename", type=str, default=None)
-    parser.add_argument("--write_txt", action="store_true")
-    parser.add_argument("--chunk", type=int, default=10000000)
+    parser = add_generic_args(parser)
+    parser.add_argument(
+        "period", type=float, help="(minimum) period between each data point"
+    )
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
@@ -245,13 +276,8 @@ def aa_reduce_freq():
 
 def aa_reduce_by_factor():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str)
-    parser.add_argument("factor", type=int)
-    parser.add_argument("--new_filename", type=str, default=None)
-    parser.add_argument("--backup_filename", type=str, default=None)
-    parser.add_argument("--write_txt", action="store_true")
-    parser.add_argument("--block", type=int, default=1)
-    parser.add_argument("--chunk", type=int, default=10000000)
+    parser = add_generic_args(parser)
+    parser.add_argument("factor", type=int, help="factor to reduce the data by")
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
@@ -281,13 +307,8 @@ def aa_reduce_by_factor():
 
 def aa_remove_every_nth():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str)
-    parser.add_argument("n", type=int)
-    parser.add_argument("--new_filename", type=str, default=None)
-    parser.add_argument("--backup_filename", type=str, default=None)
-    parser.add_argument("--write_txt", action="store_true")
-    parser.add_argument("--block", type=int, default=1)
-    parser.add_argument("--chunk", type=int, default=10000000)
+    parser = add_generic_args(parser)
+    parser.add_argument("n", type=int, help="remove every nth data point")
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
@@ -317,12 +338,16 @@ def aa_remove_every_nth():
 
 def aa_remove_data_before():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str)
-    parser.add_argument("--ts", nargs="+", type=int, required=True)
-    parser.add_argument("--new_filename", type=str, default=None)
-    parser.add_argument("--backup_filename", type=str, default=None)
-    parser.add_argument("--write_txt", action="store_true")
-    parser.add_argument("--chunk", type=int, default=10000000)
+    parser = add_generic_args(parser)
+    parser.add_argument(
+        "--ts",
+        nargs="+",
+        type=int,
+        required=True,
+        metavar="timestamp",
+        help="timestamp in the form 'month day hour minute second nanosecond' "
+        + "- month is required (default: {month} 1 0 0 0 0)",
+    )
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
@@ -368,12 +393,8 @@ def aa_remove_data_before():
 
 def aa_remove_data_after():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str)
+    parser = add_generic_args(parser)
     parser.add_argument("--ts", nargs="+", type=int, required=True)
-    parser.add_argument("--new_filename", type=str, default=None)
-    parser.add_argument("--backup_filename", type=str, default=None)
-    parser.add_argument("--write_txt", action="store_true")
-    parser.add_argument("--chunk", type=int, default=10000000)
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
