@@ -273,6 +273,7 @@ def pb_2_txt():
     parser = argparse.ArgumentParser()
     parser.add_argument("pb_filename", type=str)
     parser.add_argument("txt_filename", type=str)
+    parser.add_argument("--chunk", default=10000000)
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     txt_file = Path(args.txt_filename)
@@ -281,9 +282,10 @@ def pb_2_txt():
         raise FileNotFoundError(f"The file {pb_file} does not exist.")
     if pb_file.suffix != ".pb":
         raise ValueError(f"Invalid file extension: '{pb_file.suffix}'. Expected '.pb'.")
-
-    pb = PBUtils(pb_file)
-    pb.write_to_txt(txt_file)
+    pb = PBUtils(chunk_size=args.chunk)
+    while pb.read_done is False:
+        pb.read_pb(pb_file)
+        pb.write_to_txt(txt_file)
     print("Write completed!")
 
 
