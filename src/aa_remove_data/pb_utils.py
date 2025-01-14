@@ -273,7 +273,7 @@ def pb_2_txt():
     parser = argparse.ArgumentParser()
     parser.add_argument("pb_filename", type=str)
     parser.add_argument("txt_filename", type=str)
-    parser.add_argument("--chunk", default=10000000)
+    parser.add_argument("--chunk", type=int, default=10000000)
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     txt_file = Path(args.txt_filename)
