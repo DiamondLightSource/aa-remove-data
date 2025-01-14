@@ -68,9 +68,9 @@ def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
     Returns:
         list: Reduced list of samples
     """
-    assert (
-        freq * period == 0 and (freq + period) > 0
-    ), "Must set either frequency or period, not both or none."
+    assert freq * period == 0 and (freq + period) > 0, (
+        "Must set either frequency or period, not both or none."
+    )
     if freq:
         seconds_delta = 1 / freq
     else:
