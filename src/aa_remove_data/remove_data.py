@@ -278,6 +278,7 @@ def aa_reduce_by_factor():
     parser = argparse.ArgumentParser()
     parser = add_generic_args(parser)
     parser.add_argument("factor", type=int, help="factor to reduce the data by")
+    parser.add_argument("--block", type=int, default=1)
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
@@ -309,6 +310,7 @@ def aa_remove_every_nth():
     parser = argparse.ArgumentParser()
     parser = add_generic_args(parser)
     parser.add_argument("n", type=int, help="remove every nth data point")
+    parser.add_argument("--block", type=int, default=1)
     args = parser.parse_args()
 
     assert args.filename.endswith(".pb")
