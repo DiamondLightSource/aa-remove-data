@@ -59,7 +59,7 @@ def test_reduce_freq():
 
 def test_reduce_freq_tiny_period():
     filepath = Path("tests/test_data/RAW:2025_short.pb")
-    write_filepath = Path("tests/test_data/RAW:2025_short_reduce_freq_test.pb")
+    write_filepath = Path("tests/test_data/RAW:2025_short_test_reduce_freq.pb")
     pb = PBUtils(filepath)
     samples = remove_data.reduce_freq(pb.samples, period=0.01)
     # Shorter period than any time gap in the file so new file should be identical
