@@ -139,14 +139,20 @@ def test_cli_reduce_freq_txt():
     txt_path.unlink()
 
 
+def test_cli_reduce_freq_non_existent_filename():
+    read = test_data / "this/file/does_not_exist.pb"
+    period = "10"
+    cmd = ["aa-reduce-data-freq", read, period]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "FileNotFoundError:" in result.stderr
+
+
 def test_cli_reduce_freq_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
     period = "10"
-    cmd = [
-        "aa-reduce-data-freq",
-        read,
-        period,
-    ]
+    cmd = ["aa-reduce-data-freq", read, period]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -236,6 +242,16 @@ def test_cli_reduce_by_factor_txt():
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
     assert are_identical
     txt_path.unlink()
+
+
+def test_cli_reduce_by_factor_non_existent_filename():
+    read = test_data / "this/file/does_not_exist.pb"
+    factor = "10"
+    cmd = ["aa-reduce-data-by-factor", read, factor]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "FileNotFoundError:" in result.stderr
 
 
 def test_cli_reduce_by_factor_invalid_filename():
@@ -333,6 +349,16 @@ def test_cli_remove_every_nth_txt():
     txt_path.unlink()
 
 
+def test_cli_remove_every_nth_non_existent_filename():
+    read = test_data / "this/file/does_not_exist.pb"
+    n = "10"
+    cmd = ["aa-remove-data-every-nth", read, n]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "FileNotFoundError:" in result.stderr
+
+
 def test_cli_remove_every_nth_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
     n = "4"
@@ -428,6 +454,16 @@ def test_cli_remove_before_txt():
     txt_path.unlink()
 
 
+def test_cli_remove_before_non_existent_filename():
+    read = test_data / "this/file/does_not_exist.pb"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-before", read, "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "FileNotFoundError:" in result.stderr
+
+
 def test_cli_remove_before_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
     ts = ["1", "1", "0", "1", "5"]
@@ -521,6 +557,16 @@ def test_cli_remove_after_txt():
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
     assert are_identical
     txt_path.unlink()
+
+
+def test_cli_remove_after_non_existent_filename():
+    read = test_data / "this/file/does_not_exist.pb"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-after", read, "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "FileNotFoundError:" in result.stderr
 
 
 def test_cli_remove_after_invalid_filename():
