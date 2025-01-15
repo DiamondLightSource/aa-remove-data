@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from aa_remove_data.pb_utils import PBUtils
+from aa_remove_data.pb_utils import DEFAULT_CHUNK_SIZE, PBUtils
 
 
 def get_nano_diff(sample1: type, sample2: type) -> int:
@@ -235,8 +235,8 @@ def add_generic_args(parser):
     parser.add_argument(
         "--chunk",
         type=int,
-        default=10000000,
-        help="chunk size in lines (default: 10000000)",
+        default=DEFAULT_CHUNK_SIZE,
+        help=f"chunk size in lines (default: {DEFAULT_CHUNK_SIZE})",
     )
     return parser
 
