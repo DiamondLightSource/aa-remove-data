@@ -367,12 +367,12 @@ def test_chunking_read_all_types():
     for pv_type in pv_types:
         read_file = Path(f"tests/test_data/{pv_type}_test_data.pb")
         pb = PBUtils(read_file)
-        assert pb.chunked is False
+        assert pb.data_chunked is False
         pb_chunked = PBUtils(chunk_size=7)
         for i, sample in enumerate(pb.samples):
             if i % 7 == 0:
                 pb_chunked.read_pb(read_file)
-                assert pb_chunked.chunked is True
+                assert pb_chunked.data_chunked is True
                 # Check exactly 7 samples is read each time, other than the last
                 # chunk which will have the remaining samples (< 7).
                 assert len(pb_chunked.samples) in (7, len(pb.samples) - i)

@@ -200,7 +200,7 @@ class PBUtils:
         pvname = self.header.pvname
         year = self.header.year
         data_strs = [self.format_datastr(sample, year) for sample in self.samples]
-        if filepath not in self._write_started or self.chunked is False:
+        if filepath not in self._write_started or self.data_chunked is False:
             with open(filepath, "w") as f:
                 # Write header
                 f.write(f"{pvname}, {self.pv_type}, {year}\n")
