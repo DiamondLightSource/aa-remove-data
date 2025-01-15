@@ -241,6 +241,15 @@ def add_generic_args(parser):
     return parser
 
 
+def validate_pb_file(filepath):
+    filepath = Path(filepath)
+    if filepath.suffix != ".pb":
+        raise ValueError(
+            f"Invalid file extension for {filepath}: '{filepath.suffix}'. "
+            + "Expected '.pb'."
+        )
+
+
 def aa_reduce_freq():
     parser = argparse.ArgumentParser()
     parser = add_generic_args(parser)
@@ -249,19 +258,19 @@ def aa_reduce_freq():
     )
     args = parser.parse_args()
 
-    assert args.filename.endswith(".pb")
-
     if args.new_filename is None:
         new_pb = Path(args.filename)
     else:
-        assert args.new_filename.endswith(".pb")
         new_pb = Path(args.new_filename)
 
     if args.backup_filename is None:
         backup_pb = Path(args.filename.strip(".pb") + "_backup.pb")
     else:
-        assert args.backup_filename.endswith(".pb")
         backup_pb = Path(args.backup_filename)
+
+    validate_pb_file(args.filename)
+    validate_pb_file(new_pb)
+    validate_pb_file(backup_pb)
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
@@ -281,19 +290,19 @@ def aa_reduce_by_factor():
     parser.add_argument("--block", type=int, default=1)
     args = parser.parse_args()
 
-    assert args.filename.endswith(".pb")
-
     if args.new_filename is None:
         new_pb = Path(args.filename)
     else:
-        assert args.new_filename.endswith(".pb")
         new_pb = Path(args.new_filename)
 
     if args.backup_filename is None:
         backup_pb = Path(args.filename.strip(".pb") + "_backup.pb")
     else:
-        assert args.backup_filename.endswith(".pb")
         backup_pb = Path(args.backup_filename)
+
+    validate_pb_file(args.filename)
+    validate_pb_file(new_pb)
+    validate_pb_file(backup_pb)
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
@@ -313,19 +322,19 @@ def aa_remove_every_nth():
     parser.add_argument("--block", type=int, default=1)
     args = parser.parse_args()
 
-    assert args.filename.endswith(".pb")
-
     if args.new_filename is None:
         new_pb = Path(args.filename)
     else:
-        assert args.new_filename.endswith(".pb")
         new_pb = Path(args.new_filename)
 
     if args.backup_filename is None:
         backup_pb = Path(args.filename.strip(".pb") + "_backup.pb")
     else:
-        assert args.backup_filename.endswith(".pb")
         backup_pb = Path(args.backup_filename)
+
+    validate_pb_file(args.filename)
+    validate_pb_file(new_pb)
+    validate_pb_file(backup_pb)
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
@@ -352,19 +361,19 @@ def aa_remove_data_before():
     )
     args = parser.parse_args()
 
-    assert args.filename.endswith(".pb")
-
     if args.new_filename is None:
         new_pb = Path(args.filename)
     else:
-        assert args.new_filename.endswith(".pb")
         new_pb = Path(args.new_filename)
 
     if args.backup_filename is None:
         backup_pb = Path(args.filename.strip(".pb") + "_backup.pb")
     else:
-        assert args.backup_filename.endswith(".pb")
         backup_pb = Path(args.backup_filename)
+
+    validate_pb_file(args.filename)
+    validate_pb_file(new_pb)
+    validate_pb_file(backup_pb)
 
     pb_header = PBUtils(Path(args.filename), chunk_size=0)
     year = pb_header.header.year
@@ -399,27 +408,28 @@ def aa_remove_data_after():
     parser.add_argument("--ts", nargs="+", type=int, required=True)
     args = parser.parse_args()
 
-    assert args.filename.endswith(".pb")
-
     if args.new_filename is None:
         new_pb = Path(args.filename)
     else:
-        assert args.new_filename.endswith(".pb")
         new_pb = Path(args.new_filename)
 
     if args.backup_filename is None:
         backup_pb = Path(args.filename.strip(".pb") + "_backup.pb")
     else:
-        assert args.backup_filename.endswith(".pb")
         backup_pb = Path(args.backup_filename)
+
+    validate_pb_file(args.filename)
+    validate_pb_file(new_pb)
+    validate_pb_file(backup_pb)
 
     pb_header = PBUtils(Path(args.filename), chunk_size=0)
     year = pb_header.header.year
     timestamp = args.ts
-    assert len(timestamp) <= 6, (
-        "Give timestamp in the form 'month day hour minute second nanosecond'. "
-        + "Month is required. All must be integers."
-    )
+    if not len(timestamp) <= 6:
+        raise ValueError(
+            "Give timestamp in the form 'month day hour minute second nanosecond'. "
+            + "Month is required. All must be integers."
+        )
     if len(timestamp) == 6:
         nano = timestamp.pop(5)
     else:
