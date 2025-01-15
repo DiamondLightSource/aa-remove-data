@@ -12,6 +12,12 @@ cli_output = Path("tests/test_data/cli_expected_output")
 results = Path("tests/test_data/results_files")
 
 
+def try_to_remove(filepath: PathLike):
+    filepath = Path(filepath)
+    if filepath.is_file():
+        filepath.unlink()
+
+
 def test_cli_version():
     cmd = [sys.executable, "-m", "aa_remove_data", "--version"]
     assert subprocess.check_output(cmd).decode().strip() == __version__
@@ -68,7 +74,7 @@ def test_cli_reduce_freq():
     write.unlink()
 
 
-def test_cli_reduce_data_freq_check_period():
+def test_cli_reduce_freq_check_period():
     read = test_data / "RAW:2025_short.pb"
     write = results / "RAW:2025_test_reduce_data_freq.pb"
     backup = results / "tmp.pb"
@@ -90,7 +96,7 @@ def test_cli_reduce_data_freq_check_period():
     write.unlink()
 
 
-def test_cli_reduce_data_freq_backup():
+def test_cli_reduce_freq_backup():
     read = test_data / "RAW:2025_short.pb"
     write = results / "tmp.pb"
     backup = results / "RAW:2025_short_reduce_data_freq_backup.pb"
@@ -110,7 +116,7 @@ def test_cli_reduce_data_freq_backup():
     backup.unlink()
 
 
-def test_cli_reduce_data_freq_txt():
+def test_cli_reduce_freq_txt():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_reduce_freq_txt.pb"
     backup = results / "tmp.pb"
@@ -131,6 +137,42 @@ def test_cli_reduce_data_freq_txt():
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
     assert are_identical
     txt_path.unlink()
+
+
+def test_cli_reduce_freq_invalid_filename():
+    read = test_data / "SCALAR_STRING_test_data.jpeg"
+    period = "10"
+    cmd = [
+        "aa-reduce-data-freq",
+        read,
+        period,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
+
+
+def test_cli_remove_reduce_freq_invalid_new_filename():
+    read = test_data / "not_a_real_file.pb"
+    write = results / "SCALAR_STRING_reduce_freq.hdf5"
+    period = "10"
+    cmd = ["aa-reduce-data-freq", read, period, f"--new-filename={write}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
+
+
+def test_cli_reduce_freq_invalid_backup_filename():
+    read = test_data / "not_a_real_file.pb"
+    backup = results / "SCALAR_STRING_reduce_by_freq_backup.zip"
+    period = "10"
+    cmd = ["aa-reduce-data-freq", read, period, f"--backup-filename={backup}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(backup)}" in result.stderr
 
 
 def test_cli_reduce_by_factor():
@@ -196,6 +238,38 @@ def test_cli_reduce_by_factor_txt():
     txt_path.unlink()
 
 
+def test_cli_reduce_by_factor_invalid_filename():
+    read = test_data / "SCALAR_STRING_test_data.jpeg"
+    factor = "5"
+    cmd = ["aa-reduce-data-by-factor", read, factor]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
+
+
+def test_cli_remove_reduce_by_factor_invalid_new_filename():
+    read = test_data / "not_a_real_file.pb"
+    write = results / "SCALAR_STRING_reduce_by_factor.hdf5"
+    factor = "5"
+    cmd = ["aa-reduce-data-by-factor", read, factor, f"--new-filename={write}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
+
+
+def test_cli_reduce_by_factor_invalid_backup_filename():
+    read = test_data / "not_a_real_file.pb"
+    backup = results / "SCALAR_STRING_reduce_by_factor_backup.zip"
+    factor = "5"
+    cmd = ["aa-reduce-data-by-factor", read, factor, f"--backup-filename={backup}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(backup)}" in result.stderr
+
+
 def test_cli_remove_every_nth():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_reduce_by_factor.pb"
@@ -257,6 +331,38 @@ def test_cli_remove_every_nth_txt():
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
     assert are_identical
     txt_path.unlink()
+
+
+def test_cli_remove_every_nth_invalid_filename():
+    read = test_data / "SCALAR_STRING_test_data.jpeg"
+    n = "4"
+    cmd = ["aa-remove-data-every-nth", read, n]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
+
+
+def test_cli_remove_every_nth_invalid_new_filename():
+    read = test_data / "not_a_real_file.pb"
+    write = results / "SCALAR_STRING_remove_every_nth.hdf5"
+    n = "4"
+    cmd = ["aa-remove-data-every-nth", read, n, f"--new-filename={write}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
+
+
+def test_cli_remove_every_nth_invalid_backup_filename():
+    read = test_data / "not_a_real_file.pb"
+    backup = results / "SCALAR_STRING_remove_every_nth_backup.zip"
+    n = "4"
+    cmd = ["aa-remove-data-every-nth", read, n, f"--backup-filename={backup}"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(backup)}" in result.stderr
 
 
 def test_cli_remove_before():
@@ -322,6 +428,38 @@ def test_cli_remove_before_txt():
     txt_path.unlink()
 
 
+def test_cli_remove_before_invalid_filename():
+    read = test_data / "SCALAR_STRING_test_data.jpeg"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-before", read, "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
+
+
+def test_cli_remove_before_invalid_new_filename():
+    read = test_data / "not_a_real_file.pb"
+    write = results / "SCALAR_STRING_remove_before.hdf5"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-before", read, f"--new-filename={write}", "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
+
+
+def test_cli_remove_before_invalid_backup_filename():
+    read = test_data / "not_a_real_file.pb"
+    backup = results / "SCALAR_STRING_remove_before_backup.zip"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-before", read, f"--backup-filename={backup}", "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(backup)}" in result.stderr
+
+
 def test_cli_remove_after():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_reduce_by_factor.pb"
@@ -385,7 +523,33 @@ def test_cli_remove_after_txt():
     txt_path.unlink()
 
 
-def try_to_remove(filepath: PathLike):
-    filepath = Path(filepath)
-    if filepath.is_file():
-        filepath.unlink()
+def test_cli_remove_after_invalid_filename():
+    read = test_data / "SCALAR_STRING_test_data.jpeg"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-after", read, "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
+
+
+def test_cli_remove_after_invalid_new_filename():
+    read = test_data / "not_a_real_file.pb"
+    write = results / "SCALAR_STRING_remove_after.hdf5"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-after", read, f"--new-filename={write}", "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
+
+
+def test_cli_remove_after_invalid_backup_filename():
+    read = test_data / "not_a_real_file.pb"
+    backup = results / "SCALAR_STRING_remove_after_backup.zip"
+    ts = ["1", "1", "0", "1", "5"]
+    cmd = ["aa-remove-data-after", read, f"--backup-filename={backup}", "--ts"] + ts
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert f"ValueError: Invalid file extension for {str(backup)}" in result.stderr
