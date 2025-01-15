@@ -8,9 +8,11 @@ from pathlib import Path
 
 from aa_remove_data.generated import EPICSEvent_pb2
 
+DEFAULT_CHUNK_SIZE = 10000000
+
 
 class PBUtils:
-    def __init__(self, filepath: PathLike | None = None, chunk_size=10000000):
+    def __init__(self, filepath: PathLike | None = None, chunk_size=DEFAULT_CHUNK_SIZE):
         """Initialise a PBUtils object. If filepath is set, read the protobuf
         file at this location to gether its header, samples and type.
 
@@ -23,7 +25,7 @@ class PBUtils:
         self.header = EPICSEvent_pb2.PayloadInfo()  # type: ignore
         self.samples = []
         self.pv_type = ""
-        self.chunked = False
+        self.data_chunked = False
         self.read_done = False
         self._chunk_size = chunk_size
         self._start_line = 0
@@ -222,6 +224,7 @@ class PBUtils:
         """
         with open(filepath, "rb") as f:
             if self._start_line == 0:
+                # Read header
                 result = subprocess.run(
                     ["wc", "-l", filepath], stdout=subprocess.PIPE, text=True
                 )
@@ -230,18 +233,23 @@ class PBUtils:
                 self.header.ParseFromString(first_line)
                 f.seek(0)
                 self._start_line += 1
+
+            # Extract samples from file
             end_line = min(self._start_line + self._chunk_size, self._total_lines)
             lines = list(islice(f, self._start_line, end_line))
-            if self._total_lines == end_line:
-                self.read_done = True
-            else:
-                self.chunked = True
-            self._start_line = end_line
-            proto_class = self.get_proto_class()
-            self.samples = [proto_class() for _ in range(len(lines))]
-            for i, sample in enumerate(self.samples):
-                line = self._restore_newline_chars(lines[i].rstrip(b"\n"))
-                sample.ParseFromString(line)
+
+        if self._total_lines == end_line:
+            self.read_done = True
+        else:
+            self.data_chunked = True
+        self._start_line = end_line
+        proto_class = self.get_proto_class()
+        self.samples = [proto_class() for _ in range(len(lines))]
+
+        # Read samples
+        for i, sample in enumerate(self.samples):
+            line = self._restore_newline_chars(lines[i].rstrip(b"\n"))
+            sample.ParseFromString(line)
 
     def write_pb(self, filepath: PathLike):
         """Write a pb file that is structured in the Archiver Appliance format.
@@ -250,22 +258,22 @@ class PBUtils:
         Args:
             filepath (PathLike): Path to file to be written.
         """
-        samples_b = [
+        samples_bytes = [
             self._replace_newline_chars(sample.SerializeToString()) + b"\n"
             for sample in self.samples
         ]
-        if (
-            filepath not in self._write_started or self.chunked is False
-        ):  # Write header, start new file
-            header_b = (
+        if filepath not in self._write_started or self.data_chunked is False:
+            # Write header + samples, start new file
+            header_bytes = (
                 self._replace_newline_chars(self.header.SerializeToString()) + b"\n"
             )
             with open(filepath, "wb") as f:
-                f.writelines([header_b] + samples_b)
+                f.writelines([header_bytes] + samples_bytes)
             self._write_started.append(filepath)
-        else:  # Add to existing file
+        else:
+            # Add samples to existing file
             with open(filepath, "ab") as f:
-                f.writelines(samples_b)
+                f.writelines(samples_bytes)
 
 
 def pb_2_txt():
@@ -273,7 +281,7 @@ def pb_2_txt():
     parser = argparse.ArgumentParser()
     parser.add_argument("pb_filename", type=str)
     parser.add_argument("txt_filename", type=str)
-    parser.add_argument("--chunk", type=int, default=10000000)
+    parser.add_argument("--chunk", type=int, default=DEFAULT_CHUNK_SIZE)
     args = parser.parse_args()
     pb_file = Path(args.pb_filename)
     txt_file = Path(args.txt_filename)
