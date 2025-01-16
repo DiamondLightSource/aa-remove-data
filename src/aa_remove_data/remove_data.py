@@ -56,7 +56,12 @@ def benchmark(function: Callable, *args: Any, **kwargs: Any) -> Any:
     return result
 
 
-def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
+def reduce_freq(
+    samples: list,
+    freq: float = 0,
+    period: float = 0,
+    initial_sample: type | None = None,
+) -> list:
     """Reduce the frequency of a list of samples. Specify the desired frequency
     or period (not both).
 
@@ -76,22 +81,34 @@ def reduce_freq(samples: list, freq: float = 0, period: float = 0) -> list:
     else:
         seconds_delta = period
     nano_delta = (seconds_delta * 10**9) // 1
-    i = len(samples) - 1
     diff = 0
     assert nano_delta >= 1, "Must have a period of more than 1 nanosecond."
+
     if seconds_delta >= 5:  # Save time for long periods by ignoring nano
         delta = seconds_delta
         get_diff = get_seconds_diff
     else:
         delta = nano_delta  # For short periods still count nano
         get_diff = get_nano_diff
-    reduced_samples = [samples[-1]]
-    for i in range(len(samples) - 2, -1, -1):
+
+    if initial_sample is not None:
+        diff = get_diff(initial_sample, samples[0])
+        if diff >= delta:
+            reduced_samples = [samples[0]]
+            diff = 0
+        else:
+            reduced_samples = []
+    else:
+        diff = 0
+        reduced_samples = [samples[0]]
+    print(diff)
+    for i in range(len(samples) - 1):
         diff += get_diff(samples[i], samples[i + 1])
         if diff >= delta:
-            reduced_samples.append(samples[i])
+            reduced_samples.append(samples[i + 1])
             diff = 0
-    return list(reversed(reduced_samples))
+    print([sample.secondsintoyear for sample in reduced_samples])
+    return reduced_samples
 
 
 def get_index_at_timestamp(
@@ -154,7 +171,9 @@ def remove_after_ts(samples: list, seconds: int, nano: int = 0) -> list:
         return samples[:index]
 
 
-def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
+def keep_every_nth(
+    samples: list, n: int, block_size: int = 1, initial: int = 0
+) -> list:
     """Reduce the size of a list of samples, keeping every nth sample and
     removing the rest. The samples can be grouped together into blocks, so
     that every nth block is kept.
@@ -172,16 +191,18 @@ def keep_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     elif block_size <= 0:
         raise ValueError(f"block_size = {block_size}, must be >= 1")
     if block_size == 1:
-        return samples[n - 1 :: n]
+        return samples[n - 1 - initial :: n]
     else:
         return [
             item
             for i, item in enumerate(samples)
-            if (i + block_size) // block_size % n == 0
+            if (i + block_size + initial) // block_size % n == 0
         ]
 
 
-def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
+def remove_every_nth(
+    samples: list, n: int, block_size: int = 1, initial: int = 0
+) -> list:
     """Reduce the size of a list of samples by removing every nth sample. The
     samples can be grouped together into blocks, so that every nth block is
     removed.
@@ -199,12 +220,12 @@ def remove_every_nth(samples: list, n: int, block_size: int = 1) -> list:
     elif block_size <= 0:
         raise ValueError(f"block_size = {block_size}, must be >= 1")
     if block_size == 1:
-        return [item for i, item in enumerate(samples) if (i + 1) % n != 0]
+        return [item for i, item in enumerate(samples) if (i + 1 + initial) % n != 0]
     else:
         return [
             item
             for i, item in enumerate(samples)
-            if (i + block_size) // block_size % n != 0
+            if (i + block_size + initial) // block_size % n != 0
         ]
 
 
@@ -274,14 +295,19 @@ def aa_reduce_freq():
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
+    last_sample = None
     while pb.read_done is False:
         pb.read_pb(Path(args.filename))
         pb.write_pb(backup_pb)
-        pb.samples = reduce_freq(pb.samples, period=args.period)
+        pb.samples = reduce_freq(
+            pb.samples, period=args.period, initial_sample=last_sample
+        )
         pb.write_pb(new_pb)
         if args.write_txt:
             txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
             pb.write_to_txt(txt_filepath)
+        if pb.samples:
+            last_sample = pb.samples[-1]
 
 
 def aa_reduce_by_factor():
@@ -306,14 +332,18 @@ def aa_reduce_by_factor():
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
+    initial = 0
     while pb.read_done is False:
         pb.read_pb(Path(args.filename))
         pb.write_pb(backup_pb)
-        pb.samples = keep_every_nth(pb.samples, args.factor, block_size=args.block)
+        pb.samples = keep_every_nth(
+            pb.samples, args.factor, block_size=args.block, initial=initial
+        )
         pb.write_pb(new_pb)
         if args.write_txt:
             txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
             pb.write_to_txt(txt_filepath)
+        initial = (args.chunk + initial) % (args.factor * args.block)
 
 
 def aa_remove_every_nth():
@@ -338,14 +368,18 @@ def aa_remove_every_nth():
 
     txt_filepath = new_pb.with_suffix(".txt")
     pb = PBUtils(chunk_size=args.chunk)
+    initial = 0
     while pb.read_done is False:
         pb.read_pb(Path(args.filename))
         pb.write_pb(backup_pb)
-        pb.samples = remove_every_nth(pb.samples, args.n, block_size=args.block)
+        pb.samples = remove_every_nth(
+            pb.samples, args.n, block_size=args.block, initial=initial
+        )
         pb.write_pb(new_pb)
         if args.write_txt:
             txt_filepath = Path(str(new_pb).strip(".pb") + ".txt")
             pb.write_to_txt(txt_filepath)
+        initial = (args.chunk + initial) % (args.n * args.block)
 
 
 def aa_remove_data_before():
