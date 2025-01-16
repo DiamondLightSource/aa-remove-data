@@ -66,9 +66,10 @@ def reduce_freq(
     or period (not both).
 
     Args:
-        samples (list): _description_
+        samples (list): List of samples
         freq (float, optional): Desired frequency. Defaults to 0.
         period (float, optional): Desired period. Defaults to 0.
+        initial_sample (type, optional): An initial sample to find an initial diff.
 
     Returns:
         list: Reduced list of samples
@@ -180,6 +181,7 @@ def keep_every_nth(
         samples (list): List of samples
         n (int): Every nth sample (or block of samples) will be kept.
         block_size (int, optional): Number of samples per block. Defaults to 1.
+        initial (int, optional): End point of processing from a previous chunk.
 
     Returns:
         list: Reduced list of samples.
@@ -209,6 +211,7 @@ def remove_every_nth(
         samples (list): List of samples
         n (int): Every nth sample (or block of samples) will be removed.
         block_size (int, optional): Number of samples per block. Defaults to 1.
+        initial (int, optional): End point of processing from a previous chunk.
 
     Returns:
         list: Reduced list of samples.

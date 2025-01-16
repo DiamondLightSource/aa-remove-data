@@ -65,7 +65,7 @@ class PBUtils:
 
     def _get_proto_class_name(self) -> str:
         """Convert the name of a pv type to match the proto class name. This
-        involves coverting to CamelCase and replaying 'WAVEFORM' with 'Vector'.
+        involves coverting to CamelCase and replacing 'WAVEFORM' with 'Vector'.
         The full mapping is described in
         epicsarchiverap/src/main/edu/stanford/slac/archiverappliance/PB/data/DBR2PBTypeMapping.java
 
