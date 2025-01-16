@@ -99,7 +99,7 @@ def test_cli_reduce_freq_chunked():
         period,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
-        "--chunk=20",
+        "--chunk=17",
     ]
     subprocess.run(cmd)
     try_to_remove(backup)
@@ -247,7 +247,7 @@ def test_cli_reduce_by_factor_chunked():
         factor,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
-        "--chunk=12",
+        "--chunk=13",
     ]
     subprocess.run(cmd)
     try_to_remove(backup)
@@ -373,7 +373,7 @@ def test_cli_remove_every_nth_chunked():
         factor,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
-        "--chunk=6",
+        "--chunk=7",
     ]
     subprocess.run(cmd)
     try_to_remove(backup)
