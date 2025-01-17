@@ -167,7 +167,6 @@ class PBUtils:
             year (int, optional): Year associated with samples. Defaults to 2024.
             start: Initial number of seconds for first sample.
             seconds_gap (int, optional): Gap in seconds between samples.
-            start (int, optional): Initial number of seconds for first sample.
             Defaults to 1.
             nano_gap (int, optional): Gap in nanoseconds between samples.
             Defaults to 0.
@@ -176,15 +175,20 @@ class PBUtils:
         self.header.year = year
         self.header.type = pv_type
 
+        self.pv_type = self.get_pv_type()
         sample_class = self.get_proto_class()
         self.samples = [sample_class() for _ in range(samples)]
         time_gap = seconds_gap * 10**9 + nano_gap
         time = start * 10**9
-
         for i, sample in enumerate(self.samples):
             sample.secondsintoyear = time // 10**9
             sample.nano = time % 10**9
-            sample.val = i
+            if self.pv_type.startswith("WAVEFORM"):
+                sample.val.extend(
+                    [self.generate_test_value(i * 5 + j) for j in range(5)]
+                )
+            else:
+                sample.val = self.generate_test_value(i)
             time += time_gap
 
     def write_to_txt(self, filepath: PathLike):
@@ -225,7 +229,7 @@ class PBUtils:
                     ["wc", "-l", filepath], stdout=subprocess.PIPE, text=True
                 )
                 self._total_lines = int(result.stdout.split()[0])
-                first_line = self._restore_newline_chars(f.readline().strip())
+                first_line = self._restore_newline_chars(f.readline().rstrip(b"\n"))
                 self.header.ParseFromString(first_line)
                 f.seek(0)
                 self._start_line += 1
@@ -241,8 +245,10 @@ class PBUtils:
         self._start_line = end_line
         proto_class = self.get_proto_class()
         self.samples = [proto_class() for _ in range(len(lines))]
+
+        # Read samples
         for i, sample in enumerate(self.samples):
-            line = self._restore_newline_chars(lines[i].strip())
+            line = self._restore_newline_chars(lines[i].rstrip(b"\n"))
             sample.ParseFromString(line)
 
     def write_pb(self, filepath: PathLike):
