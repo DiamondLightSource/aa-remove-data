@@ -336,7 +336,11 @@ def aa_remove_data_before():
 
     pb_header = PBUtils(Path(args.filename), chunk_size=0)
     year = pb_header.header.year
-
+    timestamp = args.ts
+    assert len(timestamp) <= 6, (
+        "Give timestamp in the form 'month day hour minute second nanosecond'. "
+        + "Month is required. All must be integers."
+    )
     if len(timestamp) == 6:
         nano = timestamp.pop(5)
     else:
