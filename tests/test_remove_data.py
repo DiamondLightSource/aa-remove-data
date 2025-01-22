@@ -474,9 +474,6 @@ def test_keep_every_nth_nblocks_way_over_len():
     assert actual == expected
 
 
-# HERE
-
-
 def test_remove_every_nth():
     size = 100
     samples = list(range(size))

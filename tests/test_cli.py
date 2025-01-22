@@ -110,7 +110,7 @@ def test_cli_reduce_freq_chunked():
 
 def test_cli_reduce_freq_check_period():
     read = test_data / "RAW:2025_short.pb"
-    write = results / "RAW:2025_test_reduce_data_freq.pb"
+    write = results / "RAW:2025_test_reduce_freq.pb"
     backup = results / "tmp.pb"
     period = 3
     cmd = [
@@ -133,7 +133,7 @@ def test_cli_reduce_freq_check_period():
 def test_cli_reduce_freq_backup():
     read = test_data / "RAW:2025_short.pb"
     write = results / "tmp.pb"
-    backup = results / "RAW:2025_short_reduce_data_freq_backup.pb"
+    backup = results / "RAW:2025_short_reduce_freq_backup.pb"
     expected = read
     period = "3"
     cmd = [
@@ -206,7 +206,7 @@ def test_cli_remove_reduce_freq_invalid_new_filename():
 
 def test_cli_reduce_freq_invalid_backup_filename():
     read = test_data / "not_a_real_file.pb"
-    backup = results / "SCALAR_STRING_reduce_by_freq_backup.zip"
+    backup = results / "SCALAR_STRING_reduce_freq_backup.zip"
     period = "10"
     cmd = ["aa-reduce-data-freq", read, period, f"--backup-filename={backup}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -227,6 +227,49 @@ def test_cli_reduce_by_factor():
         factor,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
+    ]
+    subprocess.run(cmd)
+    try_to_remove(backup)
+    are_identical = filecmp.cmp(write, expected, shallow=False)
+    assert are_identical
+    write.unlink()
+
+
+def test_cli_reduce_by_factor_blocks():
+    read = test_data / "SCALAR_STRING_test_data.pb"
+    write = results / "SCALAR_STRING_reduce_by_factor_blocks.pb"
+    backup = results / "tmp.pb"
+    expected = cli_output / "SCALAR_STRING_reduce_by_factor_blocks.pb"
+    factor = "4"
+    cmd = [
+        "aa-reduce-data-by-factor",
+        read,
+        factor,
+        f"--new-filename={write}",
+        f"--backup-filename={backup}",
+        "--block=5",
+    ]
+    subprocess.run(cmd)
+    try_to_remove(backup)
+    are_identical = filecmp.cmp(write, expected, shallow=False)
+    assert are_identical
+    write.unlink()
+
+
+def test_cli_reduce_by_factor_blocks_chunked():
+    read = test_data / "SCALAR_STRING_test_data.pb"
+    write = results / "SCALAR_STRING_reduce_by_factor_blocks_chunked.pb"
+    backup = results / "tmp.pb"
+    expected = cli_output / "SCALAR_STRING_reduce_by_factor_blocks.pb"
+    factor = "4"
+    cmd = [
+        "aa-reduce-data-by-factor",
+        read,
+        factor,
+        f"--new-filename={write}",
+        f"--backup-filename={backup}",
+        "--block=5",
+        "--chunk=11",
     ]
     subprocess.run(cmd)
     try_to_remove(backup)
@@ -343,7 +386,7 @@ def test_cli_reduce_by_factor_invalid_backup_filename():
 
 def test_cli_remove_every_nth():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor.pb"
+    write = results / "SCALAR_STRING_remove_every_nth.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_every_nth.pb"
     factor = "3"
@@ -363,7 +406,7 @@ def test_cli_remove_every_nth():
 
 def test_cli_remove_every_nth_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor_chunked.pb"
+    write = results / "SCALAR_STRING_remove_every_nth_chunked.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_every_nth.pb"
     factor = "3"
@@ -374,6 +417,49 @@ def test_cli_remove_every_nth_chunked():
         f"--new-filename={write}",
         f"--backup-filename={backup}",
         "--chunk=7",
+    ]
+    subprocess.run(cmd)
+    try_to_remove(backup)
+    are_identical = filecmp.cmp(write, expected, shallow=False)
+    assert are_identical
+    write.unlink()
+
+
+def test_cli_remove_every_nth_blocks():
+    read = test_data / "SCALAR_STRING_test_data.pb"
+    write = results / "SCALAR_STRING_remove_every_nth_blocks.pb"
+    backup = results / "tmp.pb"
+    expected = cli_output / "SCALAR_STRING_remove_every_nth_blocks.pb"
+    factor = "4"
+    cmd = [
+        "aa-remove-data-every-nth",
+        read,
+        factor,
+        f"--new-filename={write}",
+        f"--backup-filename={backup}",
+        "--block=5",
+    ]
+    subprocess.run(cmd)
+    try_to_remove(backup)
+    are_identical = filecmp.cmp(write, expected, shallow=False)
+    assert are_identical
+    write.unlink()
+
+
+def test_cli_remove_every_nth_blocks_chunked():
+    read = test_data / "SCALAR_STRING_test_data.pb"
+    write = results / "SCALAR_STRING_remove_every_nth_blocks_chunked.pb"
+    backup = results / "tmp.pb"
+    expected = cli_output / "SCALAR_STRING_remove_every_nth_blocks.pb"
+    factor = "4"
+    cmd = [
+        "aa-remove-data-every-nth",
+        read,
+        factor,
+        f"--new-filename={write}",
+        f"--backup-filename={backup}",
+        "--block=5",
+        "--chunk=11",
     ]
     subprocess.run(cmd)
     try_to_remove(backup)
@@ -469,7 +555,7 @@ def test_cli_remove_every_nth_invalid_backup_filename():
 
 def test_cli_remove_before():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor.pb"
+    write = results / "SCALAR_STRING_remove_before.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_before.pb"
     ts = ["1", "1", "0", "1", "5"]
@@ -489,7 +575,7 @@ def test_cli_remove_before():
 
 def test_cli_remove_before_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor_chunked.pb"
+    write = results / "SCALAR_STRING_remove_before_chunked.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_before.pb"
     ts = ["1", "1", "0", "1", "5"]
@@ -595,7 +681,7 @@ def test_cli_remove_before_invalid_backup_filename():
 
 def test_cli_remove_after():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor.pb"
+    write = results / "SCALAR_STRING_remove_after.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_after.pb"
     ts = ["1", "1", "0", "1", "5"]
@@ -615,7 +701,7 @@ def test_cli_remove_after():
 
 def test_cli_remove_after_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_by_factor_chunked.pb"
+    write = results / "SCALAR_STRING_remove_after_chunked.pb"
     backup = results / "tmp.pb"
     expected = cli_output / "SCALAR_STRING_remove_after.pb"
     ts = ["1", "1", "0", "1", "5"]
