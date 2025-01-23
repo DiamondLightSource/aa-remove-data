@@ -366,13 +366,10 @@ def aa_remove_data_before():
     parser = argparse.ArgumentParser()
     parser = add_generic_args(parser)
     parser.add_argument(
-        "--ts",
-        nargs="+",
-        type=int,
-        required=True,
-        metavar="timestamp",
-        help="timestamp in the form 'month day hour minute second nanosecond' "
-        + "- month is required (default: {month} 1 0 0 0 0)",
+        "timestamp",
+        type=str,
+        help="timestamp in the form 'month,day,hour,minute,second,nanosecond'"
+        + "- month is required (default: {month},1,0,0,0,0)",
     )
     args = parser.parse_args()
     args = process_generic_args(args)
@@ -382,7 +379,7 @@ def aa_remove_data_before():
     if args.backup_filename is not None:
         subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
 
-    timestamp = args.ts
+    timestamp = [int(value) for value in args.timestamp.split(",")]
     if not len(timestamp) <= 6:
         raise ValueError(
             "Give timestamp in the form 'month day hour minute second nanosecond'. "
@@ -416,13 +413,10 @@ def aa_remove_data_after():
     parser = argparse.ArgumentParser()
     parser = add_generic_args(parser)
     parser.add_argument(
-        "--ts",
-        nargs="+",
-        type=int,
-        required=True,
-        metavar="timestamp",
-        help="timestamp in the form 'month day hour minute second nanosecond' "
-        + "- month is required (default: {month} 1 0 0 0 0)",
+        "timestamp",
+        type=str,
+        help="timestamp in the form 'month,day,hour,minute,second,nanosecond'"
+        + "- month is required (default: {month},1,0,0,0,0)",
     )
     args = parser.parse_args()
     args = process_generic_args(args)
@@ -432,7 +426,7 @@ def aa_remove_data_after():
     if args.backup_filename is not None:
         subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
 
-    timestamp = args.ts
+    timestamp = [int(value) for value in args.timestamp.split(",")]
     if not len(timestamp) <= 6:
         raise ValueError(
             "Give timestamp in the form 'month day hour minute second nanosecond'. "
