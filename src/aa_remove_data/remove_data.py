@@ -348,7 +348,6 @@ def aa_remove_data_before():
     if len(timestamp) == 1:
         timestamp.append(1)
 
-    txt_filepath = new_pb.with_suffix(".txt")
     diff = datetime(*([year] + timestamp)) - datetime(year, 1, 1)
     seconds = int(diff.total_seconds())
     txt_filepath = new_pb.with_suffix(".txt")
@@ -399,7 +398,6 @@ def aa_remove_data_after():
     if len(timestamp) == 1:
         timestamp.append(1)
 
-    txt_filepath = new_pb.with_suffix(".txt")
     diff = datetime(*([year] + timestamp)) - datetime(year, 1, 1)
     seconds = int(diff.total_seconds())
     txt_filepath = new_pb.with_suffix(".txt")
