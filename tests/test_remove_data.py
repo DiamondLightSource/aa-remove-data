@@ -43,10 +43,10 @@ def test_get_seconds_diff():
         ) - int(20.999999999 * (i - 1))
 
 
-def test_reduce_freq():
+def test_apply_min_period():
     filepath = Path("tests/test_data/RAW:2025_short.pb")
     pb = PBUtils(filepath)
-    samples = remove_data.reduce_freq(pb.samples, period=1)
+    samples = remove_data.apply_min_period(pb.samples, period=1)
     for i in range(len(samples) - 1):
         diff = (
             samples[i + 1].secondsintoyear
@@ -57,11 +57,11 @@ def test_reduce_freq():
         assert diff >= 1
 
 
-def test_reduce_freq_tiny_period():
+def test_apply_min_period_tiny_period():
     filepath = Path("tests/test_data/RAW:2025_short.pb")
-    write_filepath = Path("tests/test_data/RAW:2025_short_test_reduce_freq.pb")
+    write_filepath = Path("tests/test_data/RAW:2025_short_test_apply_min_period.pb")
     pb = PBUtils(filepath)
-    samples = remove_data.reduce_freq(pb.samples, period=0.01)
+    samples = remove_data.apply_min_period(pb.samples, period=0.01)
     # Shorter period than any time gap in the file so new file should be identical
     for i in range(len(samples) - 1):
         diff = (
@@ -77,11 +77,11 @@ def test_reduce_freq_tiny_period():
     write_filepath.unlink()  # Delete results file if test passes
 
 
-def test_reduce_freq_gives_neg_diff_error():
+def test_apply_min_period_gives_neg_diff_error():
     pb = PBUtils()
     pb.generate_test_samples(start=1000, seconds_gap=-1)
     with pytest.raises(ValueError):
-        remove_data.reduce_freq(pb.samples, freq=1)
+        remove_data.apply_min_period(pb.samples, period=1)
 
 
 def test_get_index_at_timestamp():
