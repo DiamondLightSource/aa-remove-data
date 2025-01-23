@@ -80,7 +80,7 @@ def test_reduce_freq_tiny_period():
 def test_reduce_freq_gives_neg_diff_error():
     pb = PBUtils()
     pb.generate_test_samples(start=1000, seconds_gap=-1)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         remove_data.reduce_freq(pb.samples, freq=1)
 
 
