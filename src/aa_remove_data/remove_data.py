@@ -382,7 +382,7 @@ def aa_remove_data_before():
     timestamp = [int(value) for value in args.timestamp.split(",")]
     if not len(timestamp) <= 6:
         raise ValueError(
-            "Give timestamp in the form 'month day hour minute second nanosecond'. "
+            "Give timestamp in the form 'month,day,hour,minute,second,nanosecond'. "
             + "Month is required. All must be integers."
         )
 
@@ -429,7 +429,7 @@ def aa_remove_data_after():
     timestamp = [int(value) for value in args.timestamp.split(",")]
     if not len(timestamp) <= 6:
         raise ValueError(
-            "Give timestamp in the form 'month day hour minute second nanosecond'. "
+            "Give timestamp in the form 'month,day,hour,minute,second,nanosecond'. "
             + "Month is required. All must be integers."
         )
 
