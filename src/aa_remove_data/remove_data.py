@@ -381,6 +381,7 @@ def aa_remove_data_before():
     new_pb = Path(args.new_filename)
     if args.backup_filename is not None:
         subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
+
     timestamp = args.ts
     if not len(timestamp) <= 6:
         raise ValueError(
@@ -390,11 +391,7 @@ def aa_remove_data_before():
 
     pb_header = PBUtils(Path(args.filename), chunk_size=0)
     year = pb_header.header.year
-    timestamp = args.ts
-    assert len(timestamp) <= 6, (
-        "Give timestamp in the form 'month day hour minute second nanosecond'. "
-        + "Month is required. All must be integers."
-    )
+
     if len(timestamp) == 6:
         nano = timestamp.pop(5)
     else:
