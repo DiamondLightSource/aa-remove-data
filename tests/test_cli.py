@@ -515,13 +515,8 @@ def test_cli_remove_before():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_remove_before.pb"
     expected = cli_output / "SCALAR_STRING_remove_before.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = [
-        "aa-remove-data-before",
-        read,
-        f"--new-filename={write}",
-        "--ts",
-    ] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts, f"--new-filename={write}"]
     subprocess.run(cmd)
     are_identical = filecmp.cmp(write, expected, shallow=False)
     assert are_identical
@@ -532,14 +527,8 @@ def test_cli_remove_before_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_remove_before_chunked.pb"
     expected = cli_output / "SCALAR_STRING_remove_before.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = [
-        "aa-remove-data-before",
-        read,
-        f"--new-filename={write}",
-        "--chunk=37",
-        "--ts",
-    ] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts, f"--new-filename={write}", "--chunk=37"]
     subprocess.run(cmd)
     are_identical = filecmp.cmp(write, expected, shallow=False)
     assert are_identical
@@ -551,14 +540,14 @@ def test_cli_remove_before_backup():
     write = results / "tmp.pb"
     backup = results / "SCALAR_STRING_remove_before_backup.pb"
     expected = read
-    ts = ["1", "1", "0", "1", "5"]
+    ts = "1,1,0,1,5"
     cmd = [
         "aa-remove-data-before",
         read,
+        ts,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
-        "--ts",
-    ] + ts
+    ]
     subprocess.run(cmd)
     try_to_remove(write)
     are_identical = filecmp.cmp(backup, expected, shallow=False)
@@ -571,14 +560,14 @@ def test_cli_remove_before_txt():
     write = results / "SCALAR_STRING_remove_before_txt.pb"
     expected = cli_output / "SCALAR_STRING_remove_before.txt"
     txt_path = write.with_suffix(".txt")
-    ts = ["1", "1", "0", "1", "5"]
+    ts = "1,1,0,1,5"
     cmd = [
         "aa-remove-data-before",
         read,
+        ts,
         "-t",
         f"--new-filename={write}",
-        "--ts",
-    ] + ts
+    ]
     subprocess.run(cmd)
     try_to_remove(write)
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
@@ -588,8 +577,8 @@ def test_cli_remove_before_txt():
 
 def test_cli_remove_before_non_existent_filename():
     read = test_data / "this/file/does_not_exist.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-before", read, "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -598,8 +587,8 @@ def test_cli_remove_before_non_existent_filename():
 
 def test_cli_remove_before_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-before", read, "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -609,8 +598,8 @@ def test_cli_remove_before_invalid_filename():
 def test_cli_remove_before_invalid_new_filename():
     read = test_data / "dummy_file.pb"
     write = results / "SCALAR_STRING_remove_before.hdf5"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-before", read, f"--new-filename={write}", "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts, f"--new-filename={write}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -620,8 +609,8 @@ def test_cli_remove_before_invalid_new_filename():
 def test_cli_remove_before_invalid_backup_filename():
     read = test_data / "dummy_file.pb"
     backup = results / "SCALAR_STRING_remove_before_backup.zip"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-before", read, f"--backup-filename={backup}", "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-before", read, ts, f"--backup-filename={backup}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -632,13 +621,8 @@ def test_cli_remove_after():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_remove_after.pb"
     expected = cli_output / "SCALAR_STRING_remove_after.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = [
-        "aa-remove-data-after",
-        read,
-        f"--new-filename={write}",
-        "--ts",
-    ] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts, f"--new-filename={write}"]
     subprocess.run(cmd)
     are_identical = filecmp.cmp(write, expected, shallow=False)
     assert are_identical
@@ -649,14 +633,8 @@ def test_cli_remove_after_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
     write = results / "SCALAR_STRING_remove_after_chunked.pb"
     expected = cli_output / "SCALAR_STRING_remove_after.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = [
-        "aa-remove-data-after",
-        read,
-        f"--new-filename={write}",
-        "--chunk=37",
-        "--ts",
-    ] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts, f"--new-filename={write}", "--chunk=37"]
     subprocess.run(cmd)
     are_identical = filecmp.cmp(write, expected, shallow=False)
     assert are_identical
@@ -668,14 +646,14 @@ def test_cli_remove_after_backup():
     write = results / "tmp.pb"
     backup = results / "SCALAR_STRING_remove_after_backup.pb"
     expected = read
-    ts = ["1", "1", "0", "1", "5"]
+    ts = "1,1,0,1,5"
     cmd = [
         "aa-remove-data-after",
         read,
+        ts,
         f"--new-filename={write}",
         f"--backup-filename={backup}",
-        "--ts",
-    ] + ts
+    ]
     subprocess.run(cmd)
     try_to_remove(write)
     are_identical = filecmp.cmp(backup, expected, shallow=False)
@@ -688,14 +666,8 @@ def test_cli_remove_after_txt():
     write = results / "SCALAR_STRING_remove_after_txt.pb"
     expected = cli_output / "SCALAR_STRING_remove_after.txt"
     txt_path = write.with_suffix(".txt")
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = [
-        "aa-remove-data-after",
-        read,
-        "-t",
-        f"--new-filename={write}",
-        "--ts",
-    ] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts, "-t", f"--new-filename={write}"]
     subprocess.run(cmd)
     try_to_remove(write)
     are_identical = filecmp.cmp(txt_path, expected, shallow=False)
@@ -705,8 +677,8 @@ def test_cli_remove_after_txt():
 
 def test_cli_remove_after_non_existent_filename():
     read = test_data / "this/file/does_not_exist.pb"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-after", read, "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -715,8 +687,8 @@ def test_cli_remove_after_non_existent_filename():
 
 def test_cli_remove_after_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-after", read, "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -726,8 +698,8 @@ def test_cli_remove_after_invalid_filename():
 def test_cli_remove_after_invalid_new_filename():
     read = test_data / "dummy_file.pb"
     write = results / "SCALAR_STRING_remove_after.hdf5"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-after", read, f"--new-filename={write}", "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts, f"--new-filename={write}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
@@ -737,8 +709,8 @@ def test_cli_remove_after_invalid_new_filename():
 def test_cli_remove_after_invalid_backup_filename():
     read = test_data / "dummy_file.pb"
     backup = results / "SCALAR_STRING_remove_after_backup.zip"
-    ts = ["1", "1", "0", "1", "5"]
-    cmd = ["aa-remove-data-after", read, f"--backup-filename={backup}", "--ts"] + ts
+    ts = "1,1,0,1,5"
+    cmd = ["aa-remove-data-after", read, ts, f"--backup-filename={backup}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
