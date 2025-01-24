@@ -67,13 +67,13 @@ def test_cli_pb_2_txt_chunked():
         write.unlink()
 
 
-def test_cli_reduce_freq():
+def test_cli_reduce_to_period():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_freq.pb"
-    expected = cli_output / "SCALAR_STRING_reduce_freq.pb"
+    write = results / "SCALAR_STRING_reduce_to_period.pb"
+    expected = cli_output / "SCALAR_STRING_reduce_to_period.pb"
     period = "4.5"
     cmd = [
-        "aa-reduce-data-freq",
+        "aa-reduce-data-to-period",
         read,
         period,
         f"--new-filename={write}",
@@ -84,13 +84,13 @@ def test_cli_reduce_freq():
     write.unlink()
 
 
-def test_cli_reduce_freq_chunked():
+def test_cli_reduce_to_period_chunked():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_freq_chunked.pb"
-    expected = cli_output / "SCALAR_STRING_reduce_freq.pb"
+    write = results / "SCALAR_STRING_reduce_to_period_chunked.pb"
+    expected = cli_output / "SCALAR_STRING_reduce_to_period.pb"
     period = "4.5"
     cmd = [
-        "aa-reduce-data-freq",
+        "aa-reduce-data-to-period",
         read,
         period,
         f"--new-filename={write}",
@@ -102,12 +102,12 @@ def test_cli_reduce_freq_chunked():
     write.unlink()
 
 
-def test_cli_reduce_freq_check_period():
+def test_cli_reduce_to_period_check_period():
     read = test_data / "RAW:2025_short.pb"
-    write = results / "RAW:2025_test_reduce_freq.pb"
+    write = results / "RAW:2025_test_reduce_to_period.pb"
     period = 3
     cmd = [
-        "aa-reduce-data-freq",
+        "aa-reduce-data-to-period",
         read,
         str(period),
         f"--new-filename={write}",
@@ -121,14 +121,14 @@ def test_cli_reduce_freq_check_period():
     write.unlink()
 
 
-def test_cli_reduce_freq_backup():
+def test_cli_reduce_to_period_backup():
     read = test_data / "RAW:2025_short.pb"
     write = results / "tmp.pb"
-    backup = results / "RAW:2025_short_reduce_freq_backup.pb"
+    backup = results / "RAW:2025_short_reduce_to_period_backup.pb"
     expected = read
     period = "3"
     cmd = [
-        "aa-reduce-data-freq",
+        "aa-reduce-data-to-period",
         read,
         period,
         f"--new-filename={write}",
@@ -141,14 +141,14 @@ def test_cli_reduce_freq_backup():
     backup.unlink()
 
 
-def test_cli_reduce_freq_txt():
+def test_cli_reduce_to_period_txt():
     read = test_data / "SCALAR_STRING_test_data.pb"
-    write = results / "SCALAR_STRING_reduce_freq_txt.pb"
-    expected = cli_output / "SCALAR_STRING_reduce_freq.txt"
+    write = results / "SCALAR_STRING_reduce_to_period_txt.pb"
+    expected = cli_output / "SCALAR_STRING_reduce_to_period.txt"
     txt_path = write.with_suffix(".txt")
     period = "4.5"
     cmd = [
-        "aa-reduce-data-freq",
+        "aa-reduce-data-to-period",
         read,
         period,
         "-t",
@@ -161,42 +161,42 @@ def test_cli_reduce_freq_txt():
     txt_path.unlink()
 
 
-def test_cli_reduce_freq_non_existent_filename():
+def test_cli_reduce_to_period_non_existent_filename():
     read = test_data / "this/file/does_not_exist.pb"
     period = "10"
-    cmd = ["aa-reduce-data-freq", read, period]
+    cmd = ["aa-reduce-data-to-period", read, period]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
     assert "FileNotFoundError:" in result.stderr
 
 
-def test_cli_reduce_freq_invalid_filename():
+def test_cli_reduce_to_period_invalid_filename():
     read = test_data / "SCALAR_STRING_test_data.jpeg"
     period = "10"
-    cmd = ["aa-reduce-data-freq", read, period]
+    cmd = ["aa-reduce-data-to-period", read, period]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
     assert f"ValueError: Invalid file extension for {str(read)}" in result.stderr
 
 
-def test_cli_remove_reduce_freq_invalid_new_filename():
+def test_cli_remove_reduce_to_period_invalid_new_filename():
     read = test_data / "dummy_file.pb"
-    write = results / "SCALAR_STRING_reduce_freq.hdf5"
+    write = results / "SCALAR_STRING_reduce_to_period.hdf5"
     period = "10"
-    cmd = ["aa-reduce-data-freq", read, period, f"--new-filename={write}"]
+    cmd = ["aa-reduce-data-to-period", read, period, f"--new-filename={write}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
     assert f"ValueError: Invalid file extension for {str(write)}" in result.stderr
 
 
-def test_cli_reduce_freq_invalid_backup_filename():
+def test_cli_reduce_to_period_invalid_backup_filename():
     read = test_data / "dummy_file.pb"
-    backup = results / "SCALAR_STRING_reduce_freq_backup.zip"
+    backup = results / "SCALAR_STRING_reduce_to_period_backup.zip"
     period = "10"
-    cmd = ["aa-reduce-data-freq", read, period, f"--backup-filename={backup}"]
+    cmd = ["aa-reduce-data-to-period", read, period, f"--backup-filename={backup}"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode != 0
