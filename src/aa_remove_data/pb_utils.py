@@ -64,8 +64,10 @@ class PBUtils:
         return data
 
     def _get_proto_class_name(self) -> str:
-        """Convert the name of a pv type to CamelCase to match the proto class
-        name.
+        """Convert the name of a pv type to match the proto class name. This
+        involves coverting to CamelCase and replacing 'WAVEFORM' with 'Vector'.
+        The full mapping is described in
+        epicsarchiverap/src/main/edu/stanford/slac/archiverappliance/PB/data/DBR2PBTypeMapping.java
 
         Returns:
             str: Name of proto class, e.g VectorDouble.
@@ -129,6 +131,7 @@ class PBUtils:
         pv_type: int = 6,
         samples: int = 100,
         year: int = 2024,
+        start: int = 0,
         seconds_gap: int = 1,
         nano_gap: int = 0,
     ):
@@ -140,6 +143,7 @@ class PBUtils:
             Defaults to 100.
             year (int, optional): Year associated with samples. Defaults to 2024.
             seconds_gap (int, optional): Gap in seconds between samples.
+            start (int, optional): Initial number of seconds for first sample.
             Defaults to 1.
             nano_gap (int, optional): Gap in nanoseconds between samples.
             Defaults to 0.
@@ -151,7 +155,7 @@ class PBUtils:
         sample_class = self.get_proto_class()
         self.samples = [sample_class() for _ in range(samples)]
         time_gap = seconds_gap * 10**9 + nano_gap
-        time = 0
+        time = start * 10**9
 
         for i, sample in enumerate(self.samples):
             sample.secondsintoyear = time // 10**9
@@ -211,10 +215,8 @@ class PBUtils:
         else:
             self.data_chunked = True
         self._start_line = end_line
-        sample_class = self.get_proto_class()
-        self.samples = [sample_class() for _ in range(len(lines))]
-
-        # Read samples
+        proto_class = self.get_proto_class()
+        self.samples = [proto_class() for _ in range(len(lines))]
         for i, sample in enumerate(self.samples):
             line = self._restore_newline_chars(lines[i].strip())
             sample.ParseFromString(line)
