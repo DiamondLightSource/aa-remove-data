@@ -244,6 +244,8 @@ def process_generic_args(args):
     validate_pb_file(args.new_filename)
     if args.backup_filename is not None:
         validate_pb_file(args.backup_filename)
+    if args.chunk <= 0:
+        raise ValueError(f"Chunk size ({args.chunk}) must be > 0")
     return args
 
 
