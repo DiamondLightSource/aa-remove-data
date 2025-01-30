@@ -35,7 +35,7 @@ class PBUtils:
 
     def _replace_newline_chars(self, data: bytes) -> bytes:
         """Replace newline characters with alternative to conform with the
-        archiver PB format. See https://epicsarchiver.readthedocs.io.
+        archiver PB format. See https://epicsarchiver.readthedocs.io/en/latest/developer/pb_pbraw.html.
         Args:
             data (bytes): A serialised protobuf sample.
 
@@ -49,7 +49,7 @@ class PBUtils:
 
     def _restore_newline_chars(self, data: bytes) -> bytes:
         """Restore newline characters that have been replaced by the archiver
-        PB format. See https://epicsarchiver.readthedocs.io.
+        PB format. See https://epicsarchiver.readthedocs.io/en/latest/developer/pb_pbraw.html.
         Args:
             data (bytes): A serialised protobuf message with escape characters
             replaced.
