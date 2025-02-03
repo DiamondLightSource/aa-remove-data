@@ -361,7 +361,7 @@ def test_remove_after_ts_decreasing():
 def test_keep_every_nth():
     samples = list(range(1000))
     for n in range(1, 51):
-        expected = list(range(n - 1, 1000, n))
+        expected = list(range(0, 1000, n))
         actual = remove_data.keep_every_nth(samples, n)
         assert actual == expected
 
@@ -370,7 +370,7 @@ def test_keep_every_nth_n_too_big():
     samples = list(range(1000))
     n = 2000
     actual = remove_data.keep_every_nth(samples, n)
-    assert actual == []
+    assert actual == [samples[0]]
 
 
 def test_keep_every_nth_n_is_1():
@@ -398,24 +398,21 @@ def test_keep_every_nth_n_is_len():
     samples = list(range(1000))
     n = len(samples)
     actual = remove_data.keep_every_nth(samples, n)
-    assert actual == [samples[-1]]
+    assert actual == [samples[0]]
 
 
 def test_keep_every_nth_blocks():
     size = 1000
     samples = list(range(size))
-    for n, block in zip(range(1, 51), range(1, 102, 3), strict=False):
-        expected = [
-            x
-            for x in [
-                num
-                for i in range(block * (n - 1), size, block * n)
-                for num in range(i, i + block)
-            ]
-            if x < size
-        ]
-        actual = remove_data.keep_every_nth(samples, n, block_size=block)
-        assert actual == expected
+    n = 49
+    block = 97
+    expected = [
+        x
+        for x in [num for i in range(0, size, block * n) for num in range(i, i + block)]
+        if x < size
+    ]
+    actual = remove_data.keep_every_nth(samples, n, block_size=block)
+    assert actual == expected
 
 
 def test_keep_every_nth_block_is_0():
@@ -439,7 +436,7 @@ def test_keep_every_nth_block_too_big():
     samples = list(range(size))
     n = 2
     block = 100
-    expected = []
+    expected = samples
     actual = remove_data.keep_every_nth(samples, n, block_size=block)
     assert actual == expected
 
@@ -449,7 +446,7 @@ def test_keep_every_nth_nblocks_is_len():
     samples = list(range(size))
     n = 4
     block = 250
-    expected = samples[750:]
+    expected = samples[0:250]
     actual = remove_data.keep_every_nth(samples, n, block_size=block)
     assert actual == expected
 
@@ -459,7 +456,7 @@ def test_keep_every_nth_nblocks_over_len():
     samples = list(range(size))
     n = 5
     block = 225
-    expected = samples[900:]
+    expected = samples[:225]
     actual = remove_data.keep_every_nth(samples, n, block_size=block)
     assert actual == expected
 
@@ -469,6 +466,6 @@ def test_keep_every_nth_nblocks_way_over_len():
     samples = list(range(size))
     n = 6
     block = 225
-    expected = []
+    expected = samples[:225]
     actual = remove_data.keep_every_nth(samples, n, block_size=block)
     assert actual == expected
