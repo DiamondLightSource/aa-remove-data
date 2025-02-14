@@ -1,390 +1,185 @@
-import argparse
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
-from aa_remove_data.pb_utils import DEFAULT_CHUNK_SIZE, PBUtils
+import typer
 
+from aa_remove_data.algorithms import (
+    apply_min_period,
+    reduce_by_factor,
+    remove_after_ts,
+    remove_before_ts,
+)
+from aa_remove_data.archiver_data import ArchiverData
 
-def get_nano_diff(sample1: Any, sample2: Any) -> int:
-    """Get the difference in nano seconds between two samples.
+app = typer.Typer()
 
-    Args:
-        sample1 (Any): An Archiver Appliance sample.
-        sample2 (Any): Another Archiver Appliance sample.
-
-    Returns:
-        int: Difference in nanoseconds.
-    """
-    diff = (sample2.secondsintoyear - sample1.secondsintoyear) * 10**9 + (
-        sample2.nano - sample1.nano
-    )
-    if not diff > 0:
-        raise ValueError(
-            f"diff ({diff}) is non-positive - ensure sample2 comes after sample1."
-        )
-    return diff
+FILENAME_ARGUMENT = typer.Argument(help="path/to/file.pb of PB file being processed")
+NEW_FILENAME_OPTION = typer.Option(None, help="path/to/file.pb of new file to write to")
+BACKUP_FILENAME_OPTION = typer.Option(None, help="path/to/file.pb of a backup file")
+WRITE_TXT_OPTION = typer.Option(
+    False, "--write-txt", "-t", help="Write result to text file"
+)
 
 
-def get_seconds_diff(sample1: Any, sample2: Any) -> int:
-    """Get the difference in whole seconds between two samples.
+@app.command()
+def to_period(
+    filename: Path = FILENAME_ARGUMENT,
+    period: float = typer.Argument(help="Minimum period between each data point"),
+    new_filename: Path | None = NEW_FILENAME_OPTION,
+    backup_filename: Path | None = BACKUP_FILENAME_OPTION,
+    write_txt: bool = WRITE_TXT_OPTION,
+):
+    """Reduce the frequency of data in a PB file by setting a minimum period between
+    data points."""
+    f, new_f, backup_f = process_filenames(filename, new_filename, backup_filename)
+    if backup_f is not None:
+        subprocess.run(["cp", f, backup_f], check=True)
 
-    Args:
-        sample1 (Any): An Archiver Appliance sample.
-        sample2 (Any): Another Archiver Appliance sample.
-
-    Returns:
-        int: Difference in seconds
-    """
-    diff = sample2.secondsintoyear - sample1.secondsintoyear
-    if not diff >= 0:
-        raise ValueError(
-            f"diff ({diff}) is negative - ensure sample2 comes after sample1."
-        )
-    return diff
-
-
-def apply_min_period(
-    samples: list,
-    period: float,
-    initial_sample: Any | None = None,
-) -> list:
-    """Reduce the frequency of a list of samples. Specify the desired minimum period.
-
-    Args:
-        samples (list): List of samples.
-        period (float): Desired minimum period between adjacent samples.
-        initial_sample (Any, optional): An initial sample to find an initial diff.
-
-    Returns:
-        list: Reduced list of samples
-    """
-    seconds_delta = period
-    nano_delta = (seconds_delta * 10**9) // 1
-    diff = 0
-    if not nano_delta >= 1:
-        raise ValueError(f"Period ({period}) must be at least 1 nanosecond.")
-
-    if seconds_delta >= 5:  # Save time for long periods by ignoring nano
-        delta = seconds_delta
-        get_diff = get_seconds_diff
-    else:
-        delta = nano_delta  # For short periods still count nano
-        get_diff = get_nano_diff
-
-    if initial_sample is not None:
-        diff = get_diff(initial_sample, samples[0])
-        if diff >= delta:
-            reduced_samples = [samples[0]]
-            diff = 0
-        else:
-            reduced_samples = []
-    else:
-        diff = 0
-        reduced_samples = [samples[0]]
-    for i in range(len(samples) - 1):
-        diff += get_diff(samples[i], samples[i + 1])
-        if diff >= delta:
-            reduced_samples.append(samples[i + 1])
-            diff = 0
-    return reduced_samples
+    ad = ArchiverData(f)
+    ad.process_and_write(new_f, write_txt, apply_min_period, [period])
 
 
-def get_index_at_timestamp(
-    samples: list, seconds: int, nano: int = 0
-) -> tuple[int, float]:
-    """Get index of the sample closest to a timestamp.
+@app.command()
+def by_factor(
+    filename: Path = FILENAME_ARGUMENT,
+    factor: float = typer.Argument(help="Factor to reduce the data by"),
+    new_filename: Path | None = NEW_FILENAME_OPTION,
+    backup_filename: Path | None = BACKUP_FILENAME_OPTION,
+    write_txt: bool = WRITE_TXT_OPTION,
+):
+    """Reduce the number of data points in a PB file by a certain factor."""
+    f, new_f, backup_f = process_filenames(filename, new_filename, backup_filename)
+    if backup_f is not None:
+        subprocess.run(["cp", f, backup_f], check=True)
 
-    Args:
-        samples (list): List of samples.
-        seconds (int): Seconds portion of timestamp (into the year).
-        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
-
-    Returns:
-        tuple[int, float]: Index of closest sample, difference in nanoseconds
-        between the target timestamp and sample.
-    """
-    target = seconds * 10**9 + nano
-    last_diff = target - (samples[0].secondsintoyear * 10**9 + samples[0].nano)
-    for i, sample in enumerate(samples):
-        diff = target - (sample.secondsintoyear * 10**9 + sample.nano)
-        if abs(last_diff) < abs(diff):
-            return i - 1, last_diff
-        last_diff = diff
-    return len(samples) - 1, last_diff
+    ad = ArchiverData(f)
+    ad.process_and_write(new_f, write_txt, reduce_by_factor, [factor], raw=True)
 
 
-def remove_before_ts(samples: list, seconds: int, nano: int = 0) -> list:
-    """Remove all samples before a certain timestamp.
+@app.command()
+def remove_before(
+    filename: Path = FILENAME_ARGUMENT,
+    timestamp: str = typer.Argument(
+        help="{month,day,hour,minute,second,nanosecond}. Month is required"
+    ),
+    new_filename: Path | None = NEW_FILENAME_OPTION,
+    backup_filename: Path | None = BACKUP_FILENAME_OPTION,
+    write_txt: bool = WRITE_TXT_OPTION,
+):
+    """Remove all data points before a certain timestamp in a PB file."""
+    f, new_f, backup_f = process_filenames(filename, new_filename, backup_filename)
+    if backup_f is not None:
+        subprocess.run(["cp", f, backup_f], check=True)
+
+    ad = ArchiverData(f)
+    seconds, nano = process_timestamp(ad.header.year, timestamp)
+    ad.process_and_write(new_f, write_txt, remove_before_ts, [seconds, nano])
+
+
+@app.command()
+def remove_after(
+    filename: Path = FILENAME_ARGUMENT,
+    timestamp: str = typer.Argument(
+        help="{month,day,hour,minute,second,nanosecond}. Month is required"
+    ),
+    new_filename: Path | None = NEW_FILENAME_OPTION,
+    backup_filename: Path | None = BACKUP_FILENAME_OPTION,
+    write_txt: bool = WRITE_TXT_OPTION,
+):
+    """Remove all data points after a certain timestamp in a PB file."""
+    f, new_f, backup_f = process_filenames(filename, new_filename, backup_filename)
+    if backup_f is not None:
+        subprocess.run(["cp", f, backup_f], check=True)
+
+    ad = ArchiverData(f)
+    seconds, nano = process_timestamp(ad.header.year, timestamp)
+    ad.process_and_write(new_f, write_txt, remove_after_ts, [seconds, nano])
+
+
+def validate_pb_file(filepath: Path, should_exist: bool = False):
+    """Validate a file ensuring it has a .pb extension and, optionally, exists.
 
     Args:
-        samples (list): List of samples.
-        seconds (int): Seconds portion of timestamp.
-        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
+        filepath (Path): Filepath being validated.
+        should_exist (bool, optional): Requires file to exist. Defaults to False.
 
-    Returns:
-        list: Reduced list of samples.
+    Raises:
+        ValueError: Raised if the filepath does not have a .pb extension.
+        FileNotFoundError: Raised if the file should exist, and doesn't.
     """
-    index, diff = get_index_at_timestamp(samples, seconds, nano)
-    if diff > 0:
-        return samples[index + 1 :]
-    else:
-        return samples[index:]
-
-
-def remove_after_ts(samples: list, seconds: int, nano: int = 0) -> list:
-    """Remove all samples after a certain timestamp.
-
-    Args:
-        samples (list): List of samples.
-        seconds (int): Seconds portion of timestamp.
-        nano (int, optional): Nanoseconds portion of timestamp. Defaults to 0.
-
-    Returns:
-        list: Reduced list of samples.
-    """
-    index, diff = get_index_at_timestamp(samples, seconds, nano)
-    if diff >= 0:
-        return samples[: index + 1]
-    else:
-        return samples[:index]
-
-
-def keep_every_nth(samples: list, n: int, initial: int = 0) -> list:
-    """Reduce the size of a list of samples, keeping every nth sample and
-    removing the rest.
-
-    Args:
-        samples (list): List of samples
-        n (int): Every nth sample will be kept.
-        initial (int, optional): End point of processing from a previous chunk.
-
-    Returns:
-        list: Reduced list of samples.
-    """
-    if n <= 0:
-        raise ValueError(f"n = {n}, must be >= 1")
-    first = 0 if initial == 0 else n - initial
-    return samples[first::n]
-
-
-def add_generic_args(parser):
-    parser.add_argument(
-        "filename", type=str, help="path/to/file.pb of PB file being processed"
-    )
-    parser.add_argument(
-        "--new-filename",
-        type=str,
-        default=None,
-        help="path/to/file.pb of new file to write to "
-        + "(default: writes over original file)",
-    )
-    parser.add_argument(
-        "--backup-filename",
-        type=str,
-        default=None,
-        help="path/to/file.pb of a backup file, "
-        + "(default: {original_filename}_backup.pb)",
-    )
-    parser.add_argument(
-        "-t",
-        "--write-txt",
-        action="store_true",
-        help="write result to a .txt file (default: False)",
-    )
-    parser.add_argument(
-        "--chunk",
-        type=int,
-        default=DEFAULT_CHUNK_SIZE,
-        help=f"chunk size in lines (default: {DEFAULT_CHUNK_SIZE})",
-    )
-    return parser
-
-
-def validate_pb_file(filepath, should_exist=False):
     filepath = Path(filepath)
     if filepath.suffix != ".pb":
         raise ValueError(
-            f"Invalid file extension for {filepath}: '{filepath.suffix}'. "
+            f"Invalid file extension for '{filepath}': '{filepath.suffix}'. "
             + "Expected '.pb'."
         )
-    if should_exist:
-        if not filepath.is_file():
-            raise FileNotFoundError(f"{filepath} is not a filepath.")
+    if should_exist and not filepath.is_file():
+        raise FileNotFoundError(f"No such file: '{filepath}'")
 
 
-def process_generic_args(args):
-    validate_pb_file(args.filename, should_exist=True)
+def process_filenames(
+    f: Path, new_f: Path | None, backup_f: Path | None
+) -> tuple[Path, Path, Path | None]:
+    """Process and validate filename, new filename and backup filenames provided by the
+    user.
 
-    if args.backup_filename is None and (args.new_filename in (None, args.filename)):
-        args.backup_filename = args.filename.replace(".pb", "_backup.pb")
-        args.new_filename = args.filename
-    elif args.new_filename is None:
-        args.new_filename = args.filename
-    if args.backup_filename in (args.filename, args.new_filename):
+    Args:
+        f (Path): Path to PB file beign processed.
+        new_f (Path | None): Destination path for processed PB file.
+        backup_f (Path | None): Path to backup file, a copy of the original PB file.
+
+    Raises:
+        ValueError: Raised if backup filename is the same as any of the others.
+
+    Returns:
+        tuple[Path, Path, Path | None]: Tuple containing valid filenames for the
+        original, new and backup PB files.
+    """
+    validate_pb_file(f, should_exist=True)
+
+    if backup_f is None and (new_f in (None, f)):
+        backup_f = f.with_stem(f"{f.stem}_backup")
+        new_f = f
+    elif new_f is None:
+        new_f = f
+    if backup_f in (f, new_f):
         raise ValueError(
-            f"Backup filename {args.backup_filename} cannot be the same as filename or"
+            f"Backup filename {backup_f} cannot be the same as filename or"
             + " new-filename"
         )
-
-    validate_pb_file(args.new_filename)
-    if args.backup_filename is not None:
-        validate_pb_file(args.backup_filename)
-    return args
-
-
-def aa_reduce_to_period():
-    """Reduce the frequency of data in a PB file by setting a minimum period between
-    data points."""
-    parser = argparse.ArgumentParser()
-    parser = add_generic_args(parser)
-    parser.add_argument(
-        "period", type=float, help="Minimum period between each data point"
-    )
-    args = parser.parse_args()
-    args = process_generic_args(args)
-
-    filename = Path(args.filename)
-    new_pb = Path(args.new_filename)
-    if args.backup_filename is not None:
-        subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
-
-    txt_filepath = new_pb.with_suffix(".txt")
-    pb = PBUtils(chunk_size=args.chunk)
-    last_sample = None
-    while pb.read_done is False:
-        pb.read_pb(filename)
-        pb.samples = apply_min_period(
-            pb.samples, period=args.period, initial_sample=last_sample
-        )
-        pb.write_pb(new_pb)
-        if args.write_txt:
-            pb.write_to_txt(txt_filepath)
-        if pb.samples:
-            last_sample = pb.samples[-1]
+    validate_pb_file(new_f)
+    if backup_f is not None:
+        validate_pb_file(backup_f)
+    return f, new_f, backup_f
 
 
-def aa_reduce_by_factor():
-    """Reduce the number of data points in a PB file by a certain factor by removing all
-    but every nth."""
-    parser = argparse.ArgumentParser()
-    parser = add_generic_args(parser)
-    parser.add_argument("factor", type=int, help="factor to reduce the data by")
-    args = parser.parse_args()
-    args = process_generic_args(args)
+def process_timestamp(year: int, timestamp: str) -> tuple[int, int]:
+    """Convert a timestamp entered by a user into a number of seconds into the year and
+    nanoseconds.
 
-    filename = Path(args.filename)
-    new_pb = Path(args.new_filename)
-    if args.backup_filename is not None:
-        subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
+    Args:
+        year (int): Year of the timestamp
+        timestamp (str): String containing the month, day, hour, minute, second,
+        nanosecond of the timestamp, seperated by commas.
 
-    txt_filepath = new_pb.with_suffix(".txt")
-    pb = PBUtils(chunk_size=args.chunk)
-    initial = 0
-    while pb.read_done is False:
-        pb.read_pb(filename)
-        pb.samples = keep_every_nth(pb.samples, args.factor, initial=initial)
-        pb.write_pb(new_pb)
-        if args.write_txt:
-            pb.write_to_txt(txt_filepath)
-        initial = (args.chunk + initial) % args.factor
+    Raises:
+        ValueError: Raised if the user entered too many values for the timestamp.
 
-
-def aa_remove_data_before():
-    """Remove all data points before a certain timestamp in a PB file."""
-    parser = argparse.ArgumentParser()
-    parser = add_generic_args(parser)
-    parser.add_argument(
-        "--ts",
-        nargs="+",
-        type=int,
-        required=True,
-        metavar="timestamp",
-        help="timestamp in the form 'month day hour minute second nanosecond' "
-        + "- month is required (default: {month} 1 0 0 0 0)",
-    )
-    args = parser.parse_args()
-    args = process_generic_args(args)
-
-    filename = Path(args.filename)
-    new_pb = Path(args.new_filename)
-    if args.backup_filename is not None:
-        subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
-    timestamp = args.ts
-    if not len(timestamp) <= 6:
+    Returns:
+        tuple[int, int]: Tuple containing seconds and nanoseconds that capture the
+        timestamp.
+    """
+    ts = [1, 1, 0, 0, 0, 0]
+    for i, value in enumerate(timestamp.split(",")):
+        ts[i] = int(value)
+    nano = ts.pop(5)
+    if len(ts) > 5:
         raise ValueError(
-            "Give timestamp in the form 'month day hour minute second nanosecond'. "
+            "Give timestamp in the form 'month,day,hour,minute,second,nanosecond'. "
             + "Month is required. All must be integers."
         )
-
-    pb_header = PBUtils(Path(args.filename), chunk_size=0)
-    year = pb_header.header.year
-
-    if len(timestamp) == 6:
-        nano = timestamp.pop(5)
-    else:
-        nano = 0
-    if len(timestamp) == 1:
-        timestamp.append(1)
-
-    diff = datetime(*([year] + timestamp)) - datetime(year, 1, 1)
+    month, day, hour, minute, second = ts
+    diff = datetime(year, month, day, hour, minute, second) - datetime(year, 1, 1)
     seconds = int(diff.total_seconds())
-    txt_filepath = new_pb.with_suffix(".txt")
-    pb = PBUtils(chunk_size=args.chunk)
-    while pb.read_done is False:
-        pb.read_pb(filename)
-        pb.samples = remove_before_ts(pb.samples, seconds, nano=nano)
-        pb.write_pb(new_pb)
-        if args.write_txt:
-            pb.write_to_txt(txt_filepath)
-
-
-def aa_remove_data_after():
-    """Remove all data points after a certain timestamp in a PB file."""
-    parser = argparse.ArgumentParser()
-    parser = add_generic_args(parser)
-    parser.add_argument(
-        "--ts",
-        nargs="+",
-        type=int,
-        required=True,
-        metavar="timestamp",
-        help="timestamp in the form 'month day hour minute second nanosecond' "
-        + "- month is required (default: {month} 1 0 0 0 0)",
-    )
-    args = parser.parse_args()
-    args = process_generic_args(args)
-
-    filename = Path(args.filename)
-    new_pb = Path(args.new_filename)
-    if args.backup_filename is not None:
-        subprocess.run(["cp", filename, Path(args.backup_filename)], check=True)
-
-    timestamp = args.ts
-    if not len(timestamp) <= 6:
-        raise ValueError(
-            "Give timestamp in the form 'month day hour minute second nanosecond'. "
-            + "Month is required. All must be integers."
-        )
-
-    pb_header = PBUtils(Path(args.filename), chunk_size=0)
-    year = pb_header.header.year
-
-    if len(timestamp) == 6:
-        nano = timestamp.pop(5)
-    else:
-        nano = 0
-    if len(timestamp) == 1:
-        timestamp.append(1)
-
-    diff = datetime(*([year] + timestamp)) - datetime(year, 1, 1)
-    seconds = int(diff.total_seconds())
-    txt_filepath = new_pb.with_suffix(".txt")
-    pb = PBUtils(chunk_size=args.chunk)
-    while pb.read_done is False:
-        pb.read_pb(filename)
-        pb.samples = remove_after_ts(pb.samples, seconds, nano=nano)
-        pb.write_pb(new_pb)
-        if args.write_txt:
-            pb.write_to_txt(txt_filepath)
+    return seconds, nano
